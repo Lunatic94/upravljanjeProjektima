@@ -3,15 +3,22 @@ package rs.fakultet.upravljanjeprojektima.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import jakarta.transaction.Transactional;
 import rs.fakultet.upravljanjeprojektima.exception.ResourceNotFoundException;
 import rs.fakultet.upravljanjeprojektima.model.dto.KorisnikDTO;
 import rs.fakultet.upravljanjeprojektima.model.dto.RegistracijaRequest;
+import rs.fakultet.upravljanjeprojektima.model.entity.EmailVerification;
 import rs.fakultet.upravljanjeprojektima.model.entity.Korisnik;
 import rs.fakultet.upravljanjeprojektima.model.enums.UlogaKorisnika;
+import rs.fakultet.upravljanjeprojektima.repository.EmailVerificationRepository;
 import rs.fakultet.upravljanjeprojektima.repository.KorisnikRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class KorisnikService {
@@ -21,6 +28,11 @@ public class KorisnikService {
     
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private EmailVerificationRepository emailVerificationRepository;
     
     public List<KorisnikDTO> sviKorisnici() {
         return korisnikRepository.findAll().stream()
@@ -62,8 +74,18 @@ public class KorisnikService {
         korisnik.setIme(request.getIme());
         korisnik.setPrezime(request.getPrezime());
         korisnik.setUloga(request.getUloga());
+        korisnik.setAktivan(false); // Korisnik nije aktivan do verifikacije
+        korisnik.setEmailVerifikovan(false);
+    
         
         Korisnik sacuvaniKorisnik = korisnikRepository.save(korisnik);
+
+        // Generisanje i slanje verifikacionog emaila
+        String token = UUID.randomUUID().toString();
+        EmailVerification emailVerification = new EmailVerification(token, request.getEmail());
+        emailVerificationRepository.save(emailVerification);
+    
+        emailService.posaljiVerifikacioniEmail(request.getEmail(), token);
         return konvertujUDTOPrivate(sacuvaniKorisnik);
     }
     
@@ -111,6 +133,58 @@ public class KorisnikService {
     public Korisnik nadjiEntitetPoId(Long id) {
         return korisnikRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Korisnik nije pronađen sa id: " + id));
+    }
+    
+    @Transactional
+    public boolean verifikujEmail(String token) {
+        Optional<EmailVerification> verificationOpt = emailVerificationRepository.findByToken(token);
+        
+        if (verificationOpt.isEmpty()) {
+            return false;
+        }
+        
+        EmailVerification verification = verificationOpt.get();
+        
+        if (!verification.isTokenValid()) {
+            return false;
+        }
+        
+        // Pronađi korisnika po email-u
+        Optional<Korisnik> korisnikOpt = korisnikRepository.findByEmail(verification.getEmail());
+        if (korisnikOpt.isEmpty()) {
+            return false;
+        }
+        
+        Korisnik korisnik = korisnikOpt.get();
+        korisnik.setEmailVerifikovan(true);
+        korisnik.setAktivan(true);
+        korisnik.setDatumEmailVerifikacije(LocalDateTime.now());
+        korisnikRepository.save(korisnik);
+        
+        // Označi token kao iskorišćen
+        verification.setIskoriscen(true);
+        emailVerificationRepository.save(verification);
+        
+        return true;
+    }
+
+    public void posaljiPonovoVerifikacioniEmail(String email) {
+        Optional<Korisnik> korisnikOpt = korisnikRepository.findByEmail(email);
+        if (korisnikOpt.isEmpty()) {
+            throw new RuntimeException("Korisnik sa ovim email-om ne postoji!");
+        }
+        
+        Korisnik korisnik = korisnikOpt.get();
+        if (korisnik.getEmailVerifikovan()) {
+            throw new RuntimeException("Email je već verifikovan!");
+        }
+        
+        // Generiši novi token
+        String token = UUID.randomUUID().toString();
+        EmailVerification emailVerification = new EmailVerification(token, email);
+        emailVerificationRepository.save(emailVerification);
+        
+        emailService.posaljiVerifikacioniEmail(email, token);
     }
     
     // Dodaj javnu metodu za konvertovanje u DTO

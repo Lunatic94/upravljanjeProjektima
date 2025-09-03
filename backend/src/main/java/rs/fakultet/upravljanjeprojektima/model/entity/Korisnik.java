@@ -55,6 +55,12 @@ public class Korisnik {
     
     @Column(nullable = false)
     private Boolean aktivan = true;
+
+    @Column(nullable = false)
+    private Boolean emailVerifikovan = false;
+
+    @Column
+    private LocalDateTime datumEmailVerifikacije;
     
     // Relacije
     @OneToMany(mappedBy = "kreiraoPKorisnik", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -134,6 +140,15 @@ public class Korisnik {
     
     public Boolean getAktivan() { return aktivan; }
     public void setAktivan(Boolean aktivan) { this.aktivan = aktivan; }
+
+    public Boolean getEmailVerifikovan() { return emailVerifikovan; }
+    public void setEmailVerifikovan(Boolean emailVerifikovan) { this.emailVerifikovan = emailVerifikovan; }
+
+    public LocalDateTime getDatumEmailVerifikacije() { return datumEmailVerifikacije; }
+    
+    public void setDatumEmailVerifikacije(LocalDateTime datumEmailVerifikacije) { 
+        this.datumEmailVerifikacije = datumEmailVerifikacije; 
+    }
     
     public List<Projekat> getKreiraoProjekte() { return kreiraoProjekte; }
     public void setKreiraoProjekte(List<Projekat> kreiraoProjekte) { this.kreiraoProjekte = kreiraoProjekte; }

@@ -3,6 +3,7 @@ package rs.fakultet.upravljanjeprojektima.controller;
 import jakarta.validation.Valid;
 
 import java.util.HashMap;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import rs.fakultet.upravljanjeprojektima.model.dto.JwtResponse;
 import rs.fakultet.upravljanjeprojektima.model.dto.PrijavaRequest;
 import rs.fakultet.upravljanjeprojektima.model.dto.RegistracijaRequest;
+import rs.fakultet.upravljanjeprojektima.model.entity.Korisnik;
+import rs.fakultet.upravljanjeprojektima.repository.KorisnikRepository;
 import rs.fakultet.upravljanjeprojektima.security.JwtUtils;
 import rs.fakultet.upravljanjeprojektima.security.UserDetailsImpl;
 import rs.fakultet.upravljanjeprojektima.service.KorisnikService;
@@ -28,6 +31,9 @@ public class AuthController {
     
     @Autowired
     KorisnikService korisnikService;
+
+    @Autowired
+    private KorisnikRepository korisnikRepository;
     
     @Autowired
     JwtUtils jwtUtils;
@@ -39,14 +45,21 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(prijavaRequest.getKorisnickoIme(), prijavaRequest.getLozinka()));
         
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtils.generateJwtToken(prijavaRequest.getKorisnickoIme());
+        
         
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         if (!userDetails.isAktivan()) {
             return ResponseEntity.badRequest().body("{\"error\": \" Vaš nalog je deaktiviran. Obratite se administratoru. \"}");
-        }
         
+        }
+        Optional<Korisnik> korisnikOpt = korisnikRepository.findByKorisnickoIme(prijavaRequest.getKorisnickoIme());
+        if (korisnikOpt.isPresent() && !korisnikOpt.get().getEmailVerifikovan()) {
+            return ResponseEntity.badRequest().body("{\"error\": \"Molimo verifikujte svoj email pre prijave. Proverite inbox.\"}");
+        }
+
+        String jwt = jwtUtils.generateJwtToken(prijavaRequest.getKorisnickoIme());
+
         return ResponseEntity.ok(new JwtResponse(jwt,
                                                userDetails.getId(),
                                                userDetails.getUsername(),
@@ -54,7 +67,7 @@ public class AuthController {
                                                userDetails.getUsername(),
                                                userDetails.getIme(),
                                                userDetails.getPrezime(),
-                                               Boolean.toString(userDetails.isAktivan()), // Možete dodati ime i prezime
+                                               Boolean.toString(userDetails.isAktivan()), // Dodati ime i prezime mozda?
                                                userDetails.getAuthorities().iterator().next().getAuthority()));
     }
     
@@ -63,6 +76,30 @@ public class AuthController {
         try {
             korisnikService.kreirajKorisnika(registracijaRequest);
             return ResponseEntity.ok().body("{\"message\": \"Korisnik je uspešno registrovan!\"}");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<?> verifikujEmail(@RequestParam String token) {
+        try {
+            boolean uspeh = korisnikService.verifikujEmail(token);
+            if (uspeh) {
+                return ResponseEntity.ok().body("{\"message\": \"Email je uspešno verifikovan! Možete se prijaviti.\"}");
+            } else {
+                return ResponseEntity.badRequest().body("{\"error\": \"Nevažeći ili istekao token.\"}");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> posaljiPonovoVerifikaciju(@RequestParam String email) {
+        try {
+            korisnikService.posaljiPonovoVerifikacioniEmail(email);
+            return ResponseEntity.ok().body("{\"message\": \"Verifikacioni email je ponovo poslat!\"}");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body("{\"error\": \"" + e.getMessage() + "\"}");
         }

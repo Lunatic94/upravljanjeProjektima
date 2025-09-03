@@ -1,12 +1,17 @@
 -- Početni podaci za aplikaciju upravljanja projektima
 
--- Korisnici (lozinke su enkriptovane verzije reči "test123")
-INSERT INTO korisnik (korisnicko_ime, email, lozinka, ime, prezime, uloga, datum_kreiranja, aktivan) VALUES
-('admin', 'admin@example.com', '$2a$10$dWr0O3V9K1VV6yVN1NUPtOLzkkq/Dbl23T/nFfuwX2Ah8/2ab.HCG', 'Administrator', 'System', 'ADMIN', CURRENT_TIMESTAMP, true),
-('marko_menadzer', 'marko@example.com', '$2a$10$dWr0O3V9K1VV6yVN1NUPtOLzkkq/Dbl23T/nFfuwX2Ah8/2ab.HCG', 'Marko', 'Petrović', 'MENADZER_PROJEKTA', CURRENT_TIMESTAMP, true),
-('ana_dev', 'ana@example.com', '$2a$10$dWr0O3V9K1VV6yVN1NUPtOLzkkq/Dbl23T/nFfuwX2Ah8/2ab.HCG', 'Ana', 'Nikolić', 'PROGRAMER', CURRENT_TIMESTAMP, true),
-('petar_dev', 'petar@example.com', '$2a$10$dWr0O3V9K1VV6yVN1NUPtOLzkkq/Dbl23T/nFfuwX2Ah8/2ab.HCG', 'Petar', 'Jovanović', 'PROGRAMER', CURRENT_TIMESTAMP, true),
-('milica_dev', 'milica@example.com', '$2a$10$dWr0O3V9K1VV6yVN1NUPtOLzkkq/Dbl23T/nFfuwX2Ah8/2ab.HCG', 'Milica', 'Stojanović', 'PROGRAMER', CURRENT_TIMESTAMP, true);
+-- Korisnici (lozinke su enkriptovane verzije reči "password123")
+-- AŽURIRANO: Dodana polja email_verifikovan i datum_email_verifikacije
+INSERT INTO korisnik (korisnicko_ime, email, lozinka, ime, prezime, uloga, datum_kreiranja, aktivan, email_verifikovan, datum_email_verifikacije) VALUES
+('admin', 'admin@example.com', '$2a$10$F1GwSkq/1bQS7YM62GDUweBED.BkyUcO87KFFH.YN6l1ay95ZVZ8O', 'Administrator', 'System', 'ADMIN', CURRENT_TIMESTAMP, true, true, CURRENT_TIMESTAMP),
+('marko_menadzer', 'marko@example.com', '$2a$10$F1GwSkq/1bQS7YM62GDUweBED.BkyUcO87KFFH.YN6l1ay95ZVZ8O', 'Marko', 'Petrović', 'MENADZER_PROJEKTA', CURRENT_TIMESTAMP, true, true, CURRENT_TIMESTAMP),
+('ana_dev', 'ana@example.com', '$2a$10$F1GwSkq/1bQS7YM62GDUweBED.BkyUcO87KFFH.YN6l1ay95ZVZ8O', 'Ana', 'Nikolić', 'PROGRAMER', CURRENT_TIMESTAMP, true, true, CURRENT_TIMESTAMP),
+('petar_dev', 'petar@example.com', '$2a$10$F1GwSkq/1bQS7YM62GDUweBED.BkyUcO87KFFH.YN6l1ay95ZVZ8O', 'Petar', 'Jovanović', 'PROGRAMER', CURRENT_TIMESTAMP, true, true, CURRENT_TIMESTAMP),
+('milica_dev', 'milica@example.com', '$2a$10$F1GwSkq/1bQS7YM62GDUweBED.BkyUcO87KFFH.YN6l1ay95ZVZ8O', 'Milica', 'Stojanović', 'PROGRAMER', CURRENT_TIMESTAMP, true, true, CURRENT_TIMESTAMP);
+
+-- Dodavanje test korisnika koji NIJE verifikovan (za testiranje)
+INSERT INTO korisnik (korisnicko_ime, email, lozinka, ime, prezime, uloga, datum_kreiranja, aktivan, email_verifikovan, datum_email_verifikacije) VALUES
+('test_neversifikovan', 'test@example.com', '$2a$10$F1GwSkq/1bQS7YM62GDUweBED.BkyUcO87KFFH.YN6l1ay95ZVZ8O', 'Test', 'Korisnik', 'PROGRAMER', CURRENT_TIMESTAMP, false, false, NULL);
 
 -- Projekti
 INSERT INTO projekat (naziv, opis, datum_pocetka, datum_zavrsetka, status, prioritet, kreirao_korisnik_id, menadzer_id, datum_kreiranja) VALUES
@@ -57,8 +62,8 @@ INSERT INTO komentar_zadatka (zadatak_id, korisnik_id, sadrzaj, datum_kreiranja)
 (2, 3, 'Počeo sam sa responsive dizajnom. Trebam feedback za mobile verziju.', CURRENT_TIMESTAMP),
 (2, 2, 'Pošalji mi screenshot kada završiš osnovnu strukturu.', CURRENT_TIMESTAMP),
 (5, 5, 'Kreirao sam sve potrebne screen-ove. UI je gotov 90%.', CURRENT_TIMESTAMP),
-(6, 5, 'Imam problema sa GPS tracking funkcionalnosću. Potrebna pomoć.', CURRENT_TIMESTAMP),
-(6, 2, 'Zakaziću meeting za sutra da prođemo kroz probleme.', CURRENT_TIMESTAMP),
+(6, 5, 'Imam problema sa GPS tracking funkcionalnošću. Potrebna pomoć.', CURRENT_TIMESTAMP),
+(6, 2, 'Zakazićú meeting za sutra da prođemo kroz probleme.', CURRENT_TIMESTAMP),
 (7, 3, 'Database schema je kreiran. Potreban code review.', CURRENT_TIMESTAMP),
 (8, 4, 'Intervjuisao sam 5 potencijalnih korisnika. Imam detaljne notes.', CURRENT_TIMESTAMP);
 
@@ -82,3 +87,10 @@ INSERT INTO aktivnost_projekta (projekat_id, korisnik_id, tip_aktivnosti, tip_en
 (4, 5, 'ZAVRSEN', 'ZADATAK', 11, 'Završen zadatak: Pisanje unit testova', CURRENT_TIMESTAMP - INTERVAL '60' DAY),
 (4, 5, 'ZAVRSEN', 'ZADATAK', 12, 'Završen zadatak: Integration testing', CURRENT_TIMESTAMP - INTERVAL '30' DAY),
 (4, 2, 'AZURIRAN', 'PROJEKAT', 4, 'Status projekta promenjen na ZAVRŠEN', CURRENT_TIMESTAMP - INTERVAL '25' DAY);
+
+-- NOVO: Test podaci za email verifikaciju
+-- Dodavanje test verification tokena (za razvojno testiranje)
+INSERT INTO email_verification (token, email, datum_kreiranja, datum_isteka, iskoriscen) VALUES
+('test-verification-token-123', 'test@example.com', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '24' HOUR, false),
+('expired-token-456', 'expired@example.com', CURRENT_TIMESTAMP - INTERVAL '2' DAY, CURRENT_TIMESTAMP - INTERVAL '1' DAY, false),
+('used-token-789', 'used@example.com', CURRENT_TIMESTAMP - INTERVAL '1' DAY, CURRENT_TIMESTAMP + INTERVAL '23' HOUR, true);

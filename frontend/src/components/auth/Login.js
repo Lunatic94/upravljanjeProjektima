@@ -1,23 +1,34 @@
+// src/components/auth/Login.js - Ažuriran sa React Router
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const Login = () => {
-  const [korisnickoIme, setKorisnickoIme] = useState('admin');
-  const [lozinka, setLozinka] = useState('test123');
+  const [formData, setFormData] = useState({
+    korisnickoIme: '',
+    lozinka: ''
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    const result = await login(korisnickoIme, lozinka);
+    const result = await login(formData.korisnickoIme, formData.lozinka);
+    
     if (result.success) {
-      // Ne treba onLoginSuccess() - React Router automatski preusmava
-      console.log('Login uspešan - React Router će automatski preusmeriti');
+      navigate('/dashboard');
     } else {
       setError(result.error);
     }
@@ -43,9 +54,9 @@ const Login = () => {
       }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           <h1 style={{ color: '#1976d2', marginBottom: '10px', fontSize: '28px' }}>
-            📊 Upravljanje Projektima
+            🔊 Upravljanje Projektima
           </h1>
-          <p style={{ color: '#666', margin: 0 }}>Prijavite se na vaš nalog</p>
+          <p style={{ color: '#666', margin: 0 }}>Prijavite se na svoj nalog</p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -55,8 +66,9 @@ const Login = () => {
             </label>
             <input
               type="text"
-              value={korisnickoIme}
-              onChange={(e) => setKorisnickoIme(e.target.value)}
+              name="korisnickoIme"
+              value={formData.korisnickoIme}
+              onChange={handleChange}
               required
               style={{ 
                 width: '100%', 
@@ -67,8 +79,6 @@ const Login = () => {
                 transition: 'border-color 0.3s',
                 outline: 'none'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#1976d2'}
-              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
             />
           </div>
 
@@ -78,8 +88,9 @@ const Login = () => {
             </label>
             <input
               type="password"
-              value={lozinka}
-              onChange={(e) => setLozinka(e.target.value)}
+              name="lozinka"
+              value={formData.lozinka}
+              onChange={handleChange}
               required
               style={{ 
                 width: '100%', 
@@ -90,22 +101,38 @@ const Login = () => {
                 transition: 'border-color 0.3s',
                 outline: 'none'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#1976d2'}
-              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
             />
           </div>
 
           {error && (
-            <div style={{ 
-              background: '#ffebee',
+            <div style={{
+              backgroundColor: '#ffebee',
               color: '#c62828',
               padding: '12px',
-              borderRadius: '8px',
+              borderRadius: '4px',
               marginBottom: '20px',
-              fontSize: '14px',
-              border: '1px solid #ffcdd2'
+              fontSize: '14px'
             }}>
               {error}
+              {error.includes('verifikujte') && (
+                <div style={{ marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/resend-verification')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#2196f3',
+                      textDecoration: 'underline',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Pošaljite ponovo verifikacioni email
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -126,39 +153,45 @@ const Login = () => {
               transition: 'all 0.3s'
             }}
           >
-            {loading ? 'Prijavljivanje...' : 'Prijavi se'}
+            {loading ? 'Prijavljivanje...' : 'Prijavite se'}
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <p style={{ margin: '0 0 10px 0', color: '#666' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ margin: 0, color: '#666' }}>
             Nemate nalog?{' '}
-            <Link 
-              to="/register"
+            <button 
+              onClick={() => navigate('/register')}
               style={{ 
+                background: 'none', 
+                border: 'none', 
                 color: '#1976d2', 
                 textDecoration: 'underline', 
+                cursor: 'pointer',
                 fontWeight: '600'
               }}
             >
               Registrujte se
-            </Link>
+            </button>
           </p>
         </div>
 
+        {/* Test korisnici info */}
         <div style={{ 
+          marginTop: '30px', 
+          padding: '15px', 
           background: '#f8f9fa', 
-          padding: '16px', 
-          borderRadius: '8px', 
-          fontSize: '13px',
-          color: '#666'
+          borderRadius: '8px',
+          fontSize: '14px'
         }}>
-          <div style={{ fontWeight: '600', marginBottom: '8px', color: '#333' }}>
+          <p style={{ margin: '0 0 10px 0', fontWeight: '600', color: '#333' }}>
             Test korisnici:
+          </p>
+          <div style={{ color: '#666' }}>
+            👤 admin/password123<br />
+            👤 marko_menadzer/password123<br />
+            👤 ana_dev/password123
           </div>
-          <div style={{ marginBottom: '4px' }}>👤 admin / test123 (Admin)</div>
-          <div style={{ marginBottom: '4px' }}>👤 marko_menadzer / test123 (Menadžer)</div>
-          <div>👤 ana_dev / test123 (Programer)</div>
         </div>
       </div>
     </div>
