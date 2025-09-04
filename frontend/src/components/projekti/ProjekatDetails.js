@@ -171,9 +171,10 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
                           user?.uloga === 'MENADZER_PROJEKTA';
 
   // Filtriramo korisnike koji već nisu članovi projekta
-  const dostupniZaDodavanje = dostupniKorisnici.filter(korisnik => 
-    !clanovi.some(clan => clan.korisnik?.id === korisnik.id)
-  );
+  const dostupniZaDodavanje = dostupniKorisnici;
+  //.filter(korisnik => 
+    //!clanovi.some(clan => clan.korisnik?.id === korisnik.id)
+  //);
 
   const handleAddMember = async () => {
     if (!selectedKorisnik) {
@@ -194,7 +195,7 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
       setShowAddMemberModal(false);
       
       // Refresh dostupni korisnici
-      setDostupniKorisnici(prev => prev.filter(k => k.id !== parseInt(selectedKorisnik)));
+      //setDostupniKorisnici(prev => prev.filter(k => k.id !== parseInt(selectedKorisnik)));
       
     } catch (error) {
       console.error('Error adding member:', error);
@@ -216,7 +217,7 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
       
       // Dodaj korisnika nazad u dostupne
       if (removedMember?.korisnik) {
-        setDostupniKorisnici(prev => [...prev, removedMember.korisnik]);
+       // setDostupniKorisnici(prev => [...prev, removedMember.korisnik]);
       }
       
     } catch (error) {

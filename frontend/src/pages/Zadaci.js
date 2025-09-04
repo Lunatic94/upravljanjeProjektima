@@ -16,18 +16,17 @@ const Zadaci = () => {
   const [selectedZadatak, setSelectedZadatak] = useState(null);
   const [editingZadatak, setEditingZadatak] = useState(null);
 
+  const loadZadaci = async () => {
+    try {
+      const data = await zadatakService.getMojiZadaci(token);
+      setZadaci(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error loading zadaci:', error);
+      setZadaci([]);
+    }
+    setLoading(false);
+  };
   useEffect(() => {
-    const loadZadaci = async () => {
-      try {
-        const data = await zadatakService.getMojiZadaci(token);
-        setZadaci(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error('Error loading zadaci:', error);
-        setZadaci([]);
-      }
-      setLoading(false);
-    };
-
     if (token) {
       loadZadaci();
     }
@@ -132,7 +131,9 @@ const Zadaci = () => {
     try {
       console.log('Updating task:', editingZadatak.id, formData);
       const updatedZadatak = await zadatakService.azurirajZadatak(token, editingZadatak.id, formData);
-      setZadaci(prev => prev.map(z => z.id === editingZadatak.id ? updatedZadatak : z));
+      //setZadaci(prev => prev.map(z => z.id === editingZadatak.id ? updatedZadatak : z));
+      //setEditingZadatak(null);
+      await loadZadaci();
       setEditingZadatak(null);
       alert('Zadatak je uspešno ažuriran!');
     } catch (error) {
@@ -144,7 +145,8 @@ const Zadaci = () => {
   const handleStatusChange = async (zadatakId, newStatus) => {
     try {
       await zadatakService.azurirajStatus(token, zadatakId, newStatus);
-      setZadaci(prev => prev.map(z => z.id === zadatakId ? {...z, status: newStatus} : z));
+      await loadZadaci();
+      //setZadaci(prev => prev.map(z => z.id === zadatakId ? {...z, status: newStatus} : z));
     } catch (error) {
       console.error('Error updating task status:', error);
       alert('Greška pri menjanju statusa zadatka');

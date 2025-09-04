@@ -83,7 +83,9 @@ const CreateZadatak = ({ onSubmit, onCancel, loading = false, defaultProjekatId 
     const submitData = {
       ...formData,
       procenjeniSati: formData.procenjeniSati ? parseInt(formData.procenjeniSati) : null,
-      dodeljKorisnikId: formData.dodeljKorisnikId || null
+      //dodeljKorisnikId: formData.dodeljKorisnikId || null
+      dodeljen: formData.dodeljKorisnikId ? 
+        korisnici.find(k => k.id === parseInt(formData.dodeljKorisnikId)) : null
     };
     onSubmit?.(submitData);
   };

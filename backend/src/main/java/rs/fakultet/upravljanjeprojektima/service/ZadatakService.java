@@ -56,7 +56,7 @@ public class ZadatakService {
     public List<ZadatakDTO> zadaciKorisnika() {
         Korisnik trenutniKorisnik = getTrenutniKorisnik();
         List<StatusZadatka> aktivniStatusi = Arrays.asList(
-                StatusZadatka.TREBA_URADITI, StatusZadatka.U_TOKU, StatusZadatka.NA_PREGLEDU
+                StatusZadatka.TREBA_URADITI, StatusZadatka.U_TOKU, StatusZadatka.NA_PREGLEDU, StatusZadatka.ZAVRSENO
         );
         return zadatakRepository.findAktivniZadaciKorisnika(trenutniKorisnik, aktivniStatusi).stream()
                 .map(this::konvertujUDTO)
@@ -108,6 +108,7 @@ public class ZadatakService {
                 .orElseThrow(() -> new ResourceNotFoundException("Zadatak nije pronađen sa id: " + id));
         
         Korisnik trenutniKorisnik = getTrenutniKorisnik();
+        //Korisnik dodeljeniKorisnik = korisnikService.nadjiEntitetPoId(zadatakDTO.getDodeljen().getId());
         
         zadatak.setNaslov(zadatakDTO.getNaslov());
         zadatak.setOpis(zadatakDTO.getOpis());
@@ -116,6 +117,10 @@ public class ZadatakService {
         zadatak.setProcenjeniSati(zadatakDTO.getProcenjeniSati());
         zadatak.setStvarniSati(zadatakDTO.getStvarniSati());
         zadatak.setRokZavrsetka(zadatakDTO.getRokZavrsetka());
+        if (zadatakDTO.getDodeljen() != null) {
+            Korisnik dodeljen = korisnikService.nadjiEntitetPoId(zadatakDTO.getDodeljen().getId());
+            zadatak.setDodeljen(dodeljen);
+        }
         
         Zadatak azuriranZadatak = zadatakRepository.save(zadatak);
         

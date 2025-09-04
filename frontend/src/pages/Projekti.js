@@ -14,17 +14,16 @@ const Projekti = () => {
   const [selectedProjekat, setSelectedProjekat] = useState(null);
   const [editingProjekat, setEditingProjekat] = useState(null);
 
+  const loadProjekti = async () => {
+    try {
+      const data = await api.getProjekti(token);
+      setProjekti(data || []);
+    } catch (error) {
+      console.error('Error loading projekti:', error);
+    }
+    setLoading(false);
+  };
   useEffect(() => {
-    const loadProjekti = async () => {
-      try {
-        const data = await api.getProjekti(token);
-        setProjekti(data || []);
-      } catch (error) {
-        console.error('Error loading projekti:', error);
-      }
-      setLoading(false);
-    };
-
     if (token) {
       loadProjekti();
     }
@@ -98,7 +97,7 @@ const Projekti = () => {
   const handleEditProjekat = (projekat) => {
     console.log('Editing project:', projekat); // Za debug
     setEditingProjekat(projekat);
-    setSelectedProjekat(null); // Zatvaramo details ako je otvoren
+    setSelectedProjekat(null); // Zatvaram details ako je otvoren
   };
 
   const handleDeleteProjekat = async (projekat) => {
@@ -108,7 +107,8 @@ const Projekti = () => {
         await api.obrisiProjekat(token, projekat.id);
         
         // Uklanjamo projekat iz liste
-        setProjekti(prev => prev.filter(p => p.id !== projekat.id));
+        //setProjekti(prev => prev.filter(p => p.id !== projekat.id));
+        loadProjekti();
         
         alert('Projekat je uspešno obrisan!');
       } catch (error) {
@@ -126,7 +126,8 @@ const Projekti = () => {
       const newProjekat = await api.kreirajProjekat(token, formData);
       
       // Dodajemo novi projekat u listu
-      setProjekti(prev => [newProjekat, ...prev]);
+      //setProjekti(prev => [newProjekat, ...prev]);
+      loadProjekti();
       setShowCreateForm(false);
       
       alert('Projekat je uspešno kreiran!');
@@ -144,7 +145,8 @@ const Projekti = () => {
       const updatedProjekat = await api.azurirajProjekat(token, editingProjekat.id, formData);
       
       // Ažuriramo projekat u listi
-      setProjekti(prev => prev.map(p => p.id === editingProjekat.id ? updatedProjekat : p));
+      //setProjekti(prev => prev.map(p => p.id === editingProjekat.id ? updatedProjekat : p));
+      loadProjekti();
       setEditingProjekat(null);
       
       alert('Projekat je uspešno ažuriran!');

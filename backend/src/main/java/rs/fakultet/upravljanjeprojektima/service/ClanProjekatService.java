@@ -50,9 +50,9 @@ public class ClanProjekatService {
         Korisnik trenutniKorisnik = getTrenutniKorisnik();
         
         // Proveri da li korisnik već nije član projekta
-        if (clanProjekatRepository.existsByProjekatAndKorisnikAndAktivan(projekat, korisnik, true)) {
-            throw new RuntimeException("Korisnik je već član ovog projekta!");
-        }
+        //if (clanProjekatRepository.existsByProjekatAndKorisnikAndAktivan(projekat, korisnik, true)) {
+         //   throw new RuntimeException("Korisnik je već član ovog projekta!");
+        //}
         
         ClanProjekta clanProjekta = new ClanProjekta();
         clanProjekta.setProjekat(projekat);
