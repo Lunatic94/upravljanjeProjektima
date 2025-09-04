@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import rs.fakultet.upravljanjeprojektima.model.dto.ClanProjekatDTO;
 import rs.fakultet.upravljanjeprojektima.model.dto.DodajClanaNaProjekatRequest;
+import rs.fakultet.upravljanjeprojektima.model.dto.UpravljajUlogamaRequest;
 import rs.fakultet.upravljanjeprojektima.service.ClanProjekatService;
 
 import java.util.List;
@@ -37,4 +38,31 @@ public class ClanProjekatController {
         clanProjekatService.ukloniClana(clanId);
         return ResponseEntity.ok().body("{\"message\": \"Član je uklonjen sa projekta!\"}");
     }
+
+    @PostMapping("/upravljaj-ulogama")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MENADZER_PROJEKTA')")
+    public ResponseEntity<ClanProjekatDTO> upravljajUlogama(
+            @PathVariable Long projekatId,
+            @Valid @RequestBody UpravljajUlogamaRequest request) {
+        
+        if (request.getAkcija() == UpravljajUlogamaRequest.Akcija.DODAJ) {
+            ClanProjekatDTO clan = clanProjekatService.dodajClana(projekatId, 
+                new DodajClanaNaProjekatRequest(request.getKorisnikId(), request.getUloga()));
+            return ResponseEntity.ok(clan);
+        } else {
+            clanProjekatService.ukloniUloguClana(projekatId, request.getKorisnikId(), request.getUloga());
+            
+            // Vratiti ažurirane podatke o članu
+            List<ClanProjekatDTO> clanovi = clanProjekatService.clanoviProjekta(projekatId);
+            ClanProjekatDTO azuriranClan = clanovi.stream()
+                .filter(c -> c.getKorisnik().getId().equals(request.getKorisnikId()))
+                .findFirst()
+                .orElse(null);
+                
+            return ResponseEntity.ok(azuriranClan);
+        }
+    }
+
+
+    
 }

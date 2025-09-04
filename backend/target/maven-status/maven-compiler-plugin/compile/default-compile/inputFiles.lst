@@ -10,6 +10,7 @@ C:\Users\Igor\Desktop\diplRad\backend\src\main\java\rs\fakultet\upravljanjeproje
 C:\Users\Igor\Desktop\diplRad\backend\src\main\java\rs\fakultet\upravljanjeprojektima\model\dto\KomentarZadatkaDTO.java
 C:\Users\Igor\Desktop\diplRad\backend\src\main\java\rs\fakultet\upravljanjeprojektima\service\EmailService.java
 C:\Users\Igor\Desktop\diplRad\backend\src\main\java\rs\fakultet\upravljanjeprojektima\controller\ProjekatController.java
+C:\Users\Igor\Desktop\diplRad\backend\src\main\java\rs\fakultet\upravljanjeprojektima\model\dto\UpravljajUlogamaRequest.java
 C:\Users\Igor\Desktop\diplRad\backend\src\main\java\rs\fakultet\upravljanjeprojektima\model\enums\StatusProjekta.java
 C:\Users\Igor\Desktop\diplRad\backend\src\main\java\rs\fakultet\upravljanjeprojektima\repository\EmailVerificationRepository.java
 C:\Users\Igor\Desktop\diplRad\backend\src\main\java\rs\fakultet\upravljanjeprojektima\service\AktivnostProjekatService.java

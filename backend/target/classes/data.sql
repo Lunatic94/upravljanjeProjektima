@@ -1,7 +1,6 @@
 -- Početni podaci za aplikaciju upravljanja projektima
 
 -- Korisnici (lozinke su enkriptovane verzije reči "password123")
--- AŽURIRANO: Dodana polja email_verifikovan i datum_email_verifikacije
 INSERT INTO korisnik (korisnicko_ime, email, lozinka, ime, prezime, uloga, datum_kreiranja, aktivan, email_verifikovan, datum_email_verifikacije) VALUES
 ('admin', 'admin@example.com', '$2a$10$F1GwSkq/1bQS7YM62GDUweBED.BkyUcO87KFFH.YN6l1ay95ZVZ8O', 'Administrator', 'System', 'ADMIN', CURRENT_TIMESTAMP, true, true, CURRENT_TIMESTAMP),
 ('marko_menadzer', 'marko@example.com', '$2a$10$F1GwSkq/1bQS7YM62GDUweBED.BkyUcO87KFFH.YN6l1ay95ZVZ8O', 'Marko', 'Petrović', 'MENADZER_PROJEKTA', CURRENT_TIMESTAMP, true, true, CURRENT_TIMESTAMP),
@@ -20,18 +19,50 @@ INSERT INTO projekat (naziv, opis, datum_pocetka, datum_zavrsetka, status, prior
 ('CRM Sistema', 'Customer Relationship Management sistem za upravljanje klijentima', '2024-03-01', '2024-09-30', 'PLANIRANJE', 'VISOK', 1, 2, CURRENT_TIMESTAMP),
 ('Automatizacija Testiranja', 'Implementacija automated testing framework-a', '2024-01-01', '2024-04-30', 'ZAVRSEN', 'SREDNJI', 2, 2, CURRENT_TIMESTAMP);
 
--- Članovi projekata
-INSERT INTO clan_projekta (projekat_id, korisnik_id, uloga, datum_pridruzivanja, aktivan) VALUES
-(1, 2, 'MENADZER_PROJEKTA', CURRENT_TIMESTAMP, true),
-(1, 3, 'PROGRAMER', CURRENT_TIMESTAMP, true),
-(1, 4, 'PROGRAMER', CURRENT_TIMESTAMP, true),
-(2, 2, 'MENADZER_PROJEKTA', CURRENT_TIMESTAMP, true),
-(2, 5, 'PROGRAMER', CURRENT_TIMESTAMP, true),
-(2, 3, 'TESTER', CURRENT_TIMESTAMP, true),
-(3, 2, 'MENADZER_PROJEKTA', CURRENT_TIMESTAMP, true),
-(3, 4, 'PROGRAMER', CURRENT_TIMESTAMP, true),
-(4, 2, 'MENADZER_PROJEKTA', CURRENT_TIMESTAMP, true),
-(4, 5, 'PROGRAMER', CURRENT_TIMESTAMP, true);
+-- Članovi projekata (bez kolone 'uloga' - sada se čuva u zasebnoj tabeli)
+INSERT INTO clan_projekta (projekat_id, korisnik_id, datum_pridruzivanja, aktivan) VALUES
+-- E-commerce projekat
+(1, 2, CURRENT_TIMESTAMP, true),  -- Marko (ID=2)
+(1, 3, CURRENT_TIMESTAMP, true),  -- Ana (ID=3)
+(1, 4, CURRENT_TIMESTAMP, true),  -- Petar (ID=4)
+
+-- Fitness aplikacija
+(2, 2, CURRENT_TIMESTAMP, true),  -- Marko (ID=2) 
+(2, 5, CURRENT_TIMESTAMP, true),  -- Milica (ID=5)
+(2, 3, CURRENT_TIMESTAMP, true),  -- Ana (ID=3)
+
+-- CRM sistem
+(3, 2, CURRENT_TIMESTAMP, true),  -- Marko (ID=2)
+(3, 4, CURRENT_TIMESTAMP, true),  -- Petar (ID=4)
+
+-- Automatizacija testiranja
+(4, 2, CURRENT_TIMESTAMP, true),  -- Marko (ID=2)
+(4, 5, CURRENT_TIMESTAMP, true);  -- Milica (ID=5)
+
+-- NOVO: Uloge članova (Collection Table - kreirane automatski od strane Hibernate)
+-- Tabela clan_projekta_uloge će biti kreirana automatski, ali dodajemo podatke
+INSERT INTO clan_projekta_uloge (clan_projekta_id, uloga) VALUES
+-- E-commerce projekat
+(1, 'MENADZER_PROJEKTA'),  -- Marko je menadžer
+(2, 'PROGRAMER'),          -- Ana je programer
+(2, 'TESTER'),             -- Ana je i tester (VIŠE ULOGA!)
+(3, 'PROGRAMER'),          -- Petar je programer
+
+-- Fitness aplikacija  
+(4, 'MENADZER_PROJEKTA'),  -- Marko je menadžer
+(5, 'PROGRAMER'),          -- Milica je programer
+(5, 'DIZAJNER'),           -- Milica je i dizajner (VIŠE ULOGA!)
+(6, 'TESTER'),             -- Ana je tester
+
+-- CRM sistem
+(7, 'MENADZER_PROJEKTA'),  -- Marko je menadžer
+(8, 'PROGRAMER'),          -- Petar je programer
+(8, 'TESTER'),             -- Petar je i tester (VIŠE ULOGA!)
+
+-- Automatizacija testiranja
+(9, 'MENADZER_PROJEKTA'),  -- Marko je menadžer
+(10, 'PROGRAMER'),         -- Milica je programer
+(10, 'TESTER');            -- Milica je i tester (VIŠE ULOGA!)
 
 -- Zadaci
 INSERT INTO zadatak (naslov, opis, status, prioritet, procenjeni_sati, stvarni_sati, rok_zavrsetka, projekat_id, dodeljen_korisnik_id, kreirao_korisnik_id, datum_kreiranja) VALUES
@@ -88,8 +119,7 @@ INSERT INTO aktivnost_projekta (projekat_id, korisnik_id, tip_aktivnosti, tip_en
 (4, 5, 'ZAVRSEN', 'ZADATAK', 12, 'Završen zadatak: Integration testing', CURRENT_TIMESTAMP - INTERVAL '30' DAY),
 (4, 2, 'AZURIRAN', 'PROJEKAT', 4, 'Status projekta promenjen na ZAVRŠEN', CURRENT_TIMESTAMP - INTERVAL '25' DAY);
 
--- NOVO: Test podaci za email verifikaciju
--- Dodavanje test verification tokena (za razvojno testiranje)
+-- Test podaci za email verifikaciju
 INSERT INTO email_verification (token, email, datum_kreiranja, datum_isteka, iskoriscen) VALUES
 ('test-verification-token-123', 'test@example.com', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '24' HOUR, false),
 ('expired-token-456', 'expired@example.com', CURRENT_TIMESTAMP - INTERVAL '2' DAY, CURRENT_TIMESTAMP - INTERVAL '1' DAY, false),

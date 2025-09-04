@@ -3,7 +3,6 @@ import { useAuth } from '../../context/AuthContext';
 import { zadatakService } from '../../services/zadatakService';
 import { projekatService } from '../../services/projekatService';
 import { api } from '../../services/api';
-import { useParams } from 'react-router-dom';
 
 const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
   const { token, user } = useAuth();
@@ -13,10 +12,13 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [showRoleManagementModal, setShowRoleManagementModal] = useState(false);
+  const [selectedMemberForRoles, setSelectedMemberForRoles] = useState(null);
   const [dostupniKorisnici, setDostupniKorisnici] = useState([]);
   const [selectedKorisnik, setSelectedKorisnik] = useState('');
   const [selectedUloga, setSelectedUloga] = useState('PROGRAMER');
   const [addingMember, setAddingMember] = useState(false);
+  const [availableRoles] = useState(['PROGRAMER', 'TESTER', 'DIZAJNER', 'MENADZER_PROJEKTA']);
 
   useEffect(() => {
     const loadData = async () => {
@@ -34,14 +36,8 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
         setClanovi(clanoviData || []);
         setDostupniKorisnici(korisniciData || []);
         
-        // Aktivnosti dolaze u paginated formatu sa 'content' arrayom
         const aktivnostiArray = aktivnostiData?.content || aktivnostiData || [];
         setAktivnosti(aktivnostiArray);
-        
-        // Debug log za aktivnosti
-        console.log('Aktivnosti raw data:', aktivnostiData);
-        console.log('Aktivnosti content array:', aktivnostiArray);
-        console.log('Aktivnosti length:', aktivnostiArray?.length);
       } catch (error) {
         console.error('Error loading project details:', error);
       }
@@ -50,6 +46,37 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
 
     loadData();
   }, [projekat?.id, token]);
+
+  // Helper funkcije za uloge
+  const getRoleIcon = (uloga) => {
+    const icons = {
+      'MENADZER_PROJEKTA': '👔',
+      'PROGRAMER': '👨‍💻', 
+      'TESTER': '🧪',
+      'DIZAJNER': '🎨'
+    };
+    return icons[uloga] || '👤';
+  };
+
+  const getRoleText = (uloga) => {
+    const roleMap = {
+      'MENADZER_PROJEKTA': 'Menadžer Projekta',
+      'PROGRAMER': 'Programer',
+      'TESTER': 'Tester',
+      'DIZAJNER': 'Dizajner'
+    };
+    return roleMap[uloga] || uloga?.replace('_', ' ');
+  };
+
+  const getRoleColor = (uloga) => {
+    const colors = {
+      'MENADZER_PROJEKTA': '#1976d2',
+      'PROGRAMER': '#4caf50',
+      'TESTER': '#ff9800',
+      'DIZAJNER': '#9c27b0'
+    };
+    return colors[uloga] || '#757575';
+  };
 
   const getStatusColor = (status, type = 'project') => {
     if (type === 'project') {
@@ -91,74 +118,19 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
     }
   };
 
-  const getRoleText = (uloga) => {
-    const roleMap = {
-      'MENADZER_PROJEKTA': 'Menadžer Projekta',
-      'PROGRAMER': 'Programer',
-      'TESTER': 'Tester',
-      'DIZAJNER': 'Dizajner'
-    };
-    return roleMap[uloga] || uloga;
-  };
-
-  const getRoleColor = (uloga) => {
-    const colors = {
-      'MENADZER_PROJEKTA': '#2196f3',
-      'PROGRAMER': '#4caf50',
-      'TESTER': '#ff9800',
-      'DIZAJNER': '#9c27b0'
-    };
-    return colors[uloga] || '#757575';
-  };
-
-  const getActivityTypeText = (tipAktivnosti) => {
-    const activityTypeMap = {
-      'KREIRAN': '➕ Kreiran',
-      'AZURIRAN': '✏️ Ažuriran',
-      'OBRISAN': '🗑️ Obrisan',
-      'ZAVRSEN': '✅ Završen',
-      'DODELJEN': '👤 Dodeljen',
-      'STATUS_PROMENJEN': '🔄 Status promenjen',
-      'KOMENTAR_DODAT': '💬 Dodat komentar'
-    };
-    return activityTypeMap[tipAktivnosti] || tipAktivnosti;
-  };
-
-  const getActivityTypeColor = (tipAktivnosti) => {
-    const colors = {
-      'KREIRAN': '#4caf50',
-      'AZURIRAN': '#2196f3',
-      'OBRISAN': '#f44336',
-      'ZAVRSEN': '#4caf50',
-      'DODELJEN': '#ff9800',
-      'STATUS_PROMENJEN': '#9c27b0',
-      'KOMENTAR_DODAT': '#607d8b'
-    };
-    return colors[tipAktivnosti] || '#757575';
-  };
-
-  const getEntityTypeText = (tipEntiteta) => {
-    const entityTypeMap = {
-      'PROJEKAT': '📁 Projekat',
-      'ZADATAK': '📋 Zadatak',
-      'KORISNIK': '👤 Korisnik',
-      'KOMENTAR': '💬 Komentar'
-    };
-    return entityTypeMap[tipEntiteta] || tipEntiteta;
-  };
-
-  const formatActivityDate = (dateString) => {
-    const date = new Date(dateString);
+  const formatDate = (date) => {
     const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 1) {
+    const targetDate = new Date(date);
+    const diffInDays = Math.floor((now - targetDate) / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays === 0) {
+      return 'Danas';
+    } else if (diffInDays === 1) {
       return 'Juče';
-    } else if (diffDays <= 7) {
-      return `Pre ${diffDays} dana`;
-    } else if (diffDays <= 30) {
-      const weeks = Math.floor(diffDays / 7);
+    } else if (diffInDays < 7) {
+      return `Pre ${diffInDays} dana`;
+    } else if (diffInDays <= 30) {
+      const weeks = Math.floor(diffInDays / 7);
       return `Pre ${weeks} nedelja`;
     } else {
       return date.toLocaleDateString('sr-RS');
@@ -170,12 +142,42 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
                           user?.uloga === 'ADMIN' || 
                           user?.uloga === 'MENADZER_PROJEKTA';
 
-  // Filtriramo korisnike koji već nisu članovi projekta
-  const dostupniZaDodavanje = dostupniKorisnici;
-  //.filter(korisnik => 
-    //!clanovi.some(clan => clan.korisnik?.id === korisnik.id)
-  //);
+  //const dostupniZaDodavanje = dostupniKorisnici;
+    const dostupniZaDodavanje = dostupniKorisnici.filter(korisnik => 
+    !clanovi.some(clan => clan.korisnik?.id === korisnik.id)
+  );
 
+  // Komponenta za prikaz uloga korisnika
+  const UlogeDisplay = ({ uloge }) => {
+    if (!uloge || uloge.length === 0) return <span style={{ color: '#999' }}>Nema uloge</span>;
+    
+    const ulogeArray = Array.isArray(uloge) ? uloge : Array.from(uloge);
+    
+    return (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+        {ulogeArray.map((uloga, index) => (
+          <span
+            key={index}
+            style={{
+              background: getRoleColor(uloga),
+              color: 'white',
+              padding: '2px 8px',
+              borderRadius: '12px',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px'
+            }}
+          >
+            {getRoleIcon(uloga)} {getRoleText(uloga)}
+          </span>
+        ))}
+      </div>
+    );
+  };
+
+  // Handler funkcije
   const handleAddMember = async () => {
     if (!selectedKorisnik) {
       alert('Molimo izaberite korisnika');
@@ -194,9 +196,6 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
       setSelectedUloga('PROGRAMER');
       setShowAddMemberModal(false);
       
-      // Refresh dostupni korisnici
-      //setDostupniKorisnici(prev => prev.filter(k => k.id !== parseInt(selectedKorisnik)));
-      
     } catch (error) {
       console.error('Error adding member:', error);
       alert('Greška pri dodavanju člana: ' + (error.message || 'Nepoznata greška'));
@@ -212,20 +211,256 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
 
     try {
       await projekatService.ukloniClana(token, projekat.id, clanId);
-      const removedMember = clanovi.find(c => c.id === clanId);
       setClanovi(clanovi.filter(c => c.id !== clanId));
-      
-      // Dodaj korisnika nazad u dostupne
-      if (removedMember?.korisnik) {
-       // setDostupniKorisnici(prev => [...prev, removedMember.korisnik]);
-      }
-      
     } catch (error) {
       console.error('Error removing member:', error);
       alert('Greška pri uklanjanju člana: ' + (error.message || 'Nepoznata greška'));
     }
   };
 
+  const handleManageRoles = (clan) => {
+    setSelectedMemberForRoles(clan);
+    setShowRoleManagementModal(true);
+  };
+
+const handleAddRoleToMember = async (clan, novaUloga) => {
+  try {
+      // ISPRAVKA: Koristimo ispravan endpoint
+      const response = await fetch(`http://localhost:8080/api/projekti/${projekat.id}/clanovi/upravljaj-ulogama`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          korisnikId: clan.korisnik.id,
+          uloga: novaUloga,
+          akcija: 'DODAJ'
+        })
+      });
+
+      if (response.ok) {
+        const updatedClan = await response.json();
+        setClanovi(clanovi.map(c => c.id === clan.id ? updatedClan : c));
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Greška pri dodavanju uloge');
+      }
+    } catch (error) {
+      console.error('Error adding role:', error);
+      alert('Greška pri dodavanju uloge: ' + error.message);
+    }
+  };
+
+const handleRemoveRoleFromMember = async (clan, ulogaZaUklanjanje) => {
+    try {
+      // ISPRAVKA: Koristimo ispravan endpoint
+      const response = await fetch(`http://localhost:8080/api/projekti/${projekat.id}/clanovi/upravljaj-ulogama`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          korisnikId: clan.korisnik.id,
+          uloga: ulogaZaUklanjanje,
+          akcija: 'UKLONI'
+        })
+      });
+
+      if (response.ok) {
+        // Refresh svih članova da dobijemo najnovije podatke
+        const updatedClanovi = await projekatService.getClanoveProjekta(token, projekat.id);
+        setClanovi(updatedClanovi);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Greška pri uklanjanju uloge');
+      }
+    } catch (error) {
+      console.error('Error removing role:', error);
+      alert('Greška pri uklanjanju uloge: ' + error.message);
+    }
+  };
+
+  // Modal za upravljanje ulogama
+  const RoleManagementModal = () => {
+    const [selectedRole, setSelectedRole] = useState('PROGRAMER');
+    const [loading, setLoading] = useState(false);
+
+    if (!selectedMemberForRoles) return null;
+
+    const memberRoles = Array.from(selectedMemberForRoles.uloge || []);
+    const availableToAdd = availableRoles.filter(role => !memberRoles.includes(role));
+
+    const handleAddRole = async () => {
+      if (!selectedRole) return;
+      
+      setLoading(true);
+      try {
+        await handleAddRoleToMember(selectedMemberForRoles, selectedRole);
+        setShowRoleManagementModal(false);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const handleRemoveRole = async (role) => {
+      if (memberRoles.length <= 1) {
+        alert('Korisnik mora imati barem jednu ulogu na projektu!');
+        return;
+      }
+
+      if (!window.confirm(`Da li ste sigurni da želite da uklonite ulogu ${getRoleText(role)}?`)) {
+        return;
+      }
+
+      setLoading(true);
+      try {
+        await handleRemoveRoleFromMember(selectedMemberForRoles, role);
+        setShowRoleManagementModal(false);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 2000
+      }}>
+        <div style={{
+          background: 'white',
+          padding: '30px',
+          borderRadius: '12px',
+          maxWidth: '500px',
+          width: '90%',
+          maxHeight: '80vh',
+          overflow: 'auto',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
+        }}>
+          <h3 style={{ margin: '0 0 20px 0', color: '#333' }}>
+            Upravljanje ulogama - {selectedMemberForRoles.korisnik?.ime} {selectedMemberForRoles.korisnik?.prezime}
+          </h3>
+
+          <div style={{ marginBottom: '25px' }}>
+            <h4 style={{ margin: '0 0 10px 0', color: '#666', fontSize: '14px' }}>
+              Trenutne uloge:
+            </h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {memberRoles.map((role) => (
+                <div key={role} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: getRoleColor(role),
+                  color: 'white',
+                  padding: '6px 12px',
+                  borderRadius: '20px',
+                  fontSize: '12px',
+                  fontWeight: 'bold'
+                }}>
+                  <span style={{ marginRight: '6px' }}>
+                    {getRoleIcon(role)} {getRoleText(role)}
+                  </span>
+                  {memberRoles.length > 1 && (
+                    <button
+                      onClick={() => handleRemoveRole(role)}
+                      disabled={loading}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'white',
+                        cursor: 'pointer',
+                        padding: '0 2px',
+                        marginLeft: '4px',
+                        opacity: loading ? 0.5 : 1
+                      }}
+                      title="Ukloni ulogu"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {availableToAdd.length > 0 && (
+            <div style={{ marginBottom: '25px' }}>
+              <h4 style={{ margin: '0 0 10px 0', color: '#666', fontSize: '14px' }}>
+                Dodaj novu ulogu:
+              </h4>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <select
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                  }}
+                  disabled={loading}
+                >
+                  {availableToAdd.map(role => (
+                    <option key={role} value={role}>
+                      {getRoleIcon(role)} {getRoleText(role)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleAddRole}
+                  disabled={loading || !selectedRole}
+                  style={{
+                    background: loading ? '#ccc' : '#4caf50',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    fontSize: '12px'
+                  }}
+                >
+                  {loading ? 'Dodavanje...' : 'Dodaj'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <button
+              onClick={() => setShowRoleManagementModal(false)}
+              disabled={loading}
+              style={{
+                background: '#f5f5f5',
+                color: '#333',
+                border: 'none',
+                padding: '10px 20px',
+                borderRadius: '6px',
+                cursor: loading ? 'not-allowed' : 'pointer'
+              }}
+            >
+              Zatvori
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal za dodavanje člana
   const AddMemberModal = () => (
     <div style={{
       position: 'fixed',
@@ -247,10 +482,10 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
         width: '90%',
         boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
       }}>
-        <h3 style={{ marginBottom: '20px', color: '#1976d2' }}>👥 Dodaj člana na projekat</h3>
+        <h3 style={{ margin: '0 0 20px 0', color: '#333' }}>Dodaj novog člana</h3>
         
         <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
             Korisnik:
           </label>
           <select
@@ -258,50 +493,55 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
             onChange={(e) => setSelectedKorisnik(e.target.value)}
             style={{
               width: '100%',
-              padding: '12px',
+              padding: '10px',
               border: '1px solid #ccc',
-              borderRadius: '6px',
+              borderRadius: '4px',
               fontSize: '14px'
             }}
+            disabled={addingMember}
           >
-            <option value="">Izaberite korisnika</option>
+            <option value="">Izaberite korisnika...</option>
             {dostupniZaDodavanje.map(korisnik => (
               <option key={korisnik.id} value={korisnik.id}>
-                {korisnik.ime} {korisnik.prezime} (@{korisnik.korisnickoIme})
+                {korisnik.ime} {korisnik.prezime} ({korisnik.email})
               </option>
             ))}
           </select>
         </div>
 
-        <div style={{ marginBottom: '25px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-            Uloga na projektu:
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+            Početna uloga:
           </label>
           <select
             value={selectedUloga}
             onChange={(e) => setSelectedUloga(e.target.value)}
             style={{
               width: '100%',
-              padding: '12px',
+              padding: '10px',
               border: '1px solid #ccc',
-              borderRadius: '6px',
+              borderRadius: '4px',
               fontSize: '14px'
             }}
+            disabled={addingMember}
           >
-            <option value="PROGRAMER">Programer</option>
-            <option value="TESTER">Tester</option>
-            <option value="DIZAJNER">Dizajner</option>
-            <option value="MENADZER_PROJEKTA">Menadžer Projekta</option>
+            <option value="PROGRAMER">{getRoleIcon('PROGRAMER')} Programer</option>
+            <option value="TESTER">{getRoleIcon('TESTER')} Tester</option>
+            <option value="DIZAJNER">{getRoleIcon('DIZAJNER')} Dizajner</option>
+            <option value="MENADZER_PROJEKTA">{getRoleIcon('MENADZER_PROJEKTA')} Menadžer Projekta</option>
           </select>
+          <p style={{ fontSize: '12px', color: '#666', margin: '5px 0 0 0' }}>
+            💡 Možete dodati dodatne uloge nakon dodavanja člana
+          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
           <button
             onClick={() => setShowAddMemberModal(false)}
             disabled={addingMember}
             style={{
-              background: '#ccc',
-              color: 'white',
+              background: '#f5f5f5',
+              color: '#333',
               border: 'none',
               padding: '10px 20px',
               borderRadius: '6px',
@@ -497,7 +737,7 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
                       </p>
                     </div>
                     <div>
-                      <h5 style={{ margin: '0 0 8px 0', color: '#333' }}>👤 Menadžer</h5>
+                      <h5 style={{ margin: '0 0 8px 0', color: '#333' }}>👔 Menadžer</h5>
                       <p style={{ margin: 0, color: '#666' }}>
                         {projekat.menadzer ? `${projekat.menadzer.ime} ${projekat.menadzer.prezime}` : 'Nije dodeljen'}
                       </p>
@@ -510,7 +750,6 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
                     </div>
                   </div>
 
-                  {/* Statistike */}
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
@@ -555,7 +794,11 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
               {activeTab === 'tasks' && (
                 <div>
                   {zadaci.length > 0 ? (
-                    <div style={{ display: 'grid', gap: '15px' }}>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                      gap: '15px'
+                    }}>
                       {zadaci.map((zadatak) => (
                         <div key={zadatak.id} style={{
                           border: '1px solid #e0e0e0',
@@ -563,32 +806,25 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
                           padding: '15px',
                           background: '#f8f9fa'
                         }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                            <h5 style={{ margin: '0 0 5px 0', color: '#333' }}>
-                              {zadatak.naslov}
-                            </h5>
+                          <h6 style={{ margin: '0 0 8px 0', color: '#333' }}>{zadatak.naslov}</h6>
+                          <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#666', lineHeight: '1.4' }}>
+                            {zadatak.opis?.substring(0, 100)}{zadatak.opis?.length > 100 ? '...' : ''}
+                          </p>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{
                               background: getStatusColor(zadatak.status, 'task'),
                               color: 'white',
-                              padding: '3px 8px',
+                              padding: '4px 8px',
                               borderRadius: '12px',
-                              fontSize: '11px',
+                              fontSize: '10px',
                               fontWeight: 'bold'
                             }}>
                               {getStatusText(zadatak.status, 'task')}
                             </span>
-                          </div>
-                          {zadatak.opis && (
-                            <p style={{ margin: '0 0 10px 0', color: '#666', fontSize: '14px' }}>
-                              {zadatak.opis}
-                            </p>
-                          )}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#666' }}>
-                            <span>
-                              {zadatak.dodeljen ? `👤 ${zadatak.dodeljen.ime} ${zadatak.dodeljen.prezime}` : '👤 Nedodeljen'}
-                            </span>
-                            {zadatak.rokZavrsetka && (
-                              <span>📅 {new Date(zadatak.rokZavrsetka).toLocaleDateString('sr-RS')}</span>
+                            {zadatak.dodeljen && (
+                              <span style={{ fontSize: '11px', color: '#666' }}>
+                                {zadatak.dodeljen.ime} {zadatak.dodeljen.prezime}
+                              </span>
                             )}
                           </div>
                         </div>
@@ -596,8 +832,7 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
                     </div>
                   ) : (
                     <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                      <div style={{ fontSize: '48px', marginBottom: '15px' }}>📋</div>
-                      <p>Nema zadataka na ovom projektu.</p>
+                      <p>Nema zadataka na projektu</p>
                     </div>
                   )}
                 </div>
@@ -605,93 +840,114 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
 
               {activeTab === 'team' && (
                 <div>
-                  {/* Add Member Button */}
-                  {canManageMembers && (
-                    <div style={{ marginBottom: '20px', textAlign: 'right' }}>
-                      <button
-                        onClick={() => setShowAddMemberModal(true)}
-                        style={{
-                          background: '#1976d2',
-                          color: 'white',
-                          border: 'none',
-                          padding: '10px 20px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '14px'
-                        }}
-                      >
-                        + Dodaj člana
-                      </button>
-                    </div>
-                  )}
-
                   {clanovi.length > 0 ? (
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
                       gap: '15px'
                     }}>
                       {clanovi.map((clan) => (
                         <div key={clan.id} style={{
                           border: '1px solid #e0e0e0',
-                          borderRadius: '8px',
-                          padding: '15px',
+                          borderRadius: '12px',
+                          padding: '18px',
                           background: '#f8f9fa',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between'
+                          transition: 'all 0.3s ease',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <div style={{
-                              width: '40px',
-                              height: '40px',
-                              borderRadius: '50%',
-                              background: getRoleColor(clan.uloga),
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'white',
-                              fontSize: '16px',
-                              fontWeight: 'bold',
-                              marginRight: '12px'
-                            }}>
-                              {clan.korisnik?.ime?.charAt(0)}{clan.korisnik?.prezime?.charAt(0)}
-                            </div>
-                            <div>
-                              <h6 style={{ margin: '0 0 4px 0', color: '#333' }}>
-                                {clan.korisnik?.ime} {clan.korisnik?.prezime}
-                              </h6>
-                              <p style={{ margin: '0 0 2px 0', fontSize: '12px', color: '#666' }}>
-                                {getRoleText(clan.uloga)}
-                              </p>
-                              <p style={{ margin: 0, fontSize: '11px', color: '#999' }}>
-                                Od {new Date(clan.datumPridruljivanja).toLocaleDateString('sr-RS')}
-                              </p>
-                            </div>
-                          </div>
-                          {canManageMembers && (
-                            <button
-                              onClick={() => handleRemoveMember(clan.id)}
-                              style={{
-                                background: '#f44336',
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'flex-start', 
+                            justifyContent: 'space-between',
+                            marginBottom: '12px'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                              <div style={{
+                                width: '45px',
+                                height: '45px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #1976d2, #42a5f5)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
                                 color: 'white',
-                                border: 'none',
-                                padding: '6px 10px',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '12px'
-                              }}
-                            >
-                              Ukloni
-                            </button>
-                          )}
+                                fontSize: '16px',
+                                fontWeight: 'bold',
+                                marginRight: '12px'
+                              }}>
+                                {clan.korisnik?.ime?.charAt(0)}{clan.korisnik?.prezime?.charAt(0)}
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <h6 style={{ margin: '0 0 4px 0', color: '#333', fontSize: '15px' }}>
+                                  {clan.korisnik?.ime} {clan.korisnik?.prezime}
+                                </h6>
+                                <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#666' }}>
+                                  {clan.korisnik?.email}
+                                </p>
+                                <p style={{ margin: 0, fontSize: '11px', color: '#999' }}>
+                                  Član od {new Date(clan.datumPridruzivanja).toLocaleDateString('sr-RS')}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {canManageMembers && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <button
+                                  onClick={() => handleRemoveMember(clan.id)}
+                                  style={{
+                                    background: '#f44336',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontSize: '11px'
+                                  }}
+                                  title="Ukloni člana"
+                                >
+                                  ✕
+                                </button>
+                                <button
+                                  onClick={() => handleManageRoles(clan)}
+                                  style={{
+                                    background: '#1976d2',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontSize: '11px'
+                                  }}
+                                  title="Upravljaj ulogama"
+                                >
+                                  ⚙️
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          <div style={{
+                            borderTop: '1px solid #e0e0e0',
+                            paddingTop: '12px'
+                          }}>
+                            <div style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between',
+                              marginBottom: '8px'
+                            }}>
+                              <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#666' }}>
+                                Uloge na projektu:
+                              </span>
+                            </div>
+                            <UlogeDisplay uloge={clan.uloge} />
+                          </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                      <div style={{ fontSize: '48px', marginBottom: '15px' }}>👥</div>
-                      <p>Nema članova na ovom projektu.</p>
+                      <p>Nema članova na projektu</p>
                       {canManageMembers && (
                         <button
                           onClick={() => setShowAddMemberModal(true)}
@@ -702,13 +958,31 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
                             padding: '10px 20px',
                             borderRadius: '6px',
                             cursor: 'pointer',
-                            fontSize: '14px',
-                            marginTop: '15px'
+                            marginTop: '10px'
                           }}
                         >
-                          + Dodaj prvog člana
+                          Dodaj prvog člana
                         </button>
                       )}
+                    </div>
+                  )}
+                  
+                  {canManageMembers && clanovi.length > 0 && (
+                    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                      <button
+                        onClick={() => setShowAddMemberModal(true)}
+                        style={{
+                          background: '#1976d2',
+                          color: 'white',
+                          border: 'none',
+                          padding: '12px 24px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '14px'
+                        }}
+                      >
+                        + Dodaj novog člana
+                      </button>
                     </div>
                   )}
                 </div>
@@ -717,96 +991,44 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
               {activeTab === 'activity' && (
                 <div>
                   {aktivnosti.length > 0 ? (
-                    <div style={{ display: 'grid', gap: '12px' }}>
-                      {aktivnosti
-                        .sort((a, b) => new Date(b.datumKreiranja) - new Date(a.datumKreiranja))
-                        .map((aktivnost, index) => (
-                        <div key={aktivnost.id || index} style={{
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                      {aktivnosti.map((aktivnost, index) => (
+                        <div key={index} style={{
                           border: '1px solid #e0e0e0',
                           borderRadius: '8px',
                           padding: '15px',
                           background: '#f8f9fa',
-                          borderLeft: `4px solid ${getActivityTypeColor(aktivnost.tipAktivnosti)}`
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '12px'
                         }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{
-                                background: getActivityTypeColor(aktivnost.tipAktivnosti),
-                                color: 'white',
-                                padding: '3px 8px',
-                                borderRadius: '12px',
-                                fontSize: '11px',
-                                fontWeight: 'bold'
-                              }}>
-                                {getActivityTypeText(aktivnost.tipAktivnosti)}
+                          <div style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: '#1976d2',
+                            marginTop: '8px',
+                            flexShrink: 0
+                          }} />
+                          <div style={{ flex: 1 }}>
+                            <p style={{ margin: '0 0 4px 0', color: '#333', fontSize: '14px' }}>
+                              {aktivnost.opis}
+                            </p>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '12px', color: '#666' }}>
+                                {aktivnost.korisnik?.ime} {aktivnost.korisnik?.prezime}
                               </span>
-                              <span style={{
-                                background: '#607d8b',
-                                color: 'white',
-                                padding: '3px 8px',
-                                borderRadius: '12px',
-                                fontSize: '11px',
-                                fontWeight: 'bold'
-                              }}>
-                                {getEntityTypeText(aktivnost.tipEntiteta)}
+                              <span style={{ fontSize: '11px', color: '#999' }}>
+                                {aktivnost.datumKreiranja ? formatDate(new Date(aktivnost.datumKreiranja)) : 'Nepoznato'}
                               </span>
                             </div>
-                            <span style={{ fontSize: '12px', color: '#999' }}>
-                              {formatActivityDate(aktivnost.datumKreiranja)}
-                            </span>
                           </div>
-                          
-                          <p style={{ 
-                            margin: '0 0 8px 0', 
-                            color: '#333', 
-                            fontSize: '14px',
-                            lineHeight: '1.4'
-                          }}>
-                            {aktivnost.opis}
-                          </p>
-                          
-                          {aktivnost.korisnik && (
-                            <div style={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              fontSize: '12px', 
-                              color: '#666',
-                              marginTop: '8px'
-                            }}>
-                              <div style={{
-                                width: '20px',
-                                height: '20px',
-                                borderRadius: '50%',
-                                background: '#1976d2',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'white',
-                                fontSize: '10px',
-                                fontWeight: 'bold',
-                                marginRight: '6px'
-                              }}>
-                                {aktivnost.korisnik.ime?.charAt(0)}{aktivnost.korisnik.prezime?.charAt(0)}
-                              </div>
-                              <span>
-                                {aktivnost.korisnik.ime} {aktivnost.korisnik.prezime}
-                              </span>
-                              <span style={{ margin: '0 8px', color: '#ddd' }}>•</span>
-                              <span>
-                                {new Date(aktivnost.datumKreiranja).toLocaleString('sr-RS')}
-                              </span>
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                      <div style={{ fontSize: '48px', marginBottom: '15px' }}>📈</div>
-                      <p>Nema aktivnosti na ovom projektu.</p>
-                      <p style={{ fontSize: '14px', marginTop: '10px' }}>
-                        Aktivnosti će se prikazivati kada se dese promene na projektu.
-                      </p>
+                      <p>Nema aktivnosti na projektu</p>
                     </div>
                   )}
                 </div>
@@ -816,8 +1038,9 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
         </div>
       </div>
 
-      {/* Add Member Modal */}
+      {/* Modals */}
       {showAddMemberModal && <AddMemberModal />}
+      {showRoleManagementModal && <RoleManagementModal />}
     </div>
   );
 };

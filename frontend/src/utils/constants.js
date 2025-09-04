@@ -32,3 +32,30 @@ export const ROLE_PERMISSIONS = {
   [USER_ROLES.MENADZER_PROJEKTA]: ['view_all_users', 'create_project', 'manage_team'],
   [USER_ROLES.PROGRAMER]: ['view_assigned_tasks', 'update_task_status']
 };
+export const PROJECT_ROLES = {
+  MENADZER_PROJEKTA: 'MENADZER_PROJEKTA',
+  PROGRAMER: 'PROGRAMER', 
+  TESTER: 'TESTER',
+  DIZAJNER: 'DIZAJNER'
+};
+
+export const PROJECT_ROLE_LABELS = {
+  [PROJECT_ROLES.MENADZER_PROJEKTA]: 'Menadžer Projekta',
+  [PROJECT_ROLES.PROGRAMER]: 'Programer',
+  [PROJECT_ROLES.TESTER]: 'Tester',
+  [PROJECT_ROLES.DIZAJNER]: 'Dizajner'
+};
+
+export const PROJECT_ROLE_ICONS = {
+  [PROJECT_ROLES.MENADZER_PROJEKTA]: '👔',
+  [PROJECT_ROLES.PROGRAMER]: '👨‍💻',
+  [PROJECT_ROLES.TESTER]: '🧪',
+  [PROJECT_ROLES.DIZAJNER]: '🎨'
+};
+
+export const PROJECT_ROLE_COLORS = {
+  [PROJECT_ROLES.MENADZER_PROJEKTA]: '#1976d2',
+  [PROJECT_ROLES.PROGRAMER]: '#4caf50',
+  [PROJECT_ROLES.TESTER]: '#ff9800',
+  [PROJECT_ROLES.DIZAJNER]: '#9c27b0'
+};

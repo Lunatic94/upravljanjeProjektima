@@ -3,13 +3,15 @@ package rs.fakultet.upravljanjeprojektima.model.dto;
 import rs.fakultet.upravljanjeprojektima.model.enums.UlogaNaProjektu;
 
 import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ClanProjekatDTO {
     private Long id;
     private KorisnikDTO korisnik;
     private Long projekatId;
     private String nazivProjekta;
-    private UlogaNaProjektu uloga;
+    private Set<UlogaNaProjektu> uloge; // IZMENA: Lista umesto jedne uloge
     private LocalDateTime datumPridruzivanja;
     private LocalDateTime datumNapustanja;
     private Boolean aktivan;
@@ -30,8 +32,8 @@ public class ClanProjekatDTO {
     public String getNazivProjekta() { return nazivProjekta; }
     public void setNazivProjekta(String nazivProjekta) { this.nazivProjekta = nazivProjekta; }
     
-    public UlogaNaProjektu getUloga() { return uloga; }
-    public void setUloga(UlogaNaProjektu uloga) { this.uloga = uloga; }
+    public Set<UlogaNaProjektu> getUloge() { return uloge; }
+    public void setUloge(Set<UlogaNaProjektu> uloge) { this.uloge = uloge; }
     
     public LocalDateTime getDatumPridruzivanja() { return datumPridruzivanja; }
     public void setDatumPridruzivanja(LocalDateTime datumPridruzivanja) { this.datumPridruzivanja = datumPridruzivanja; }
@@ -41,4 +43,15 @@ public class ClanProjekatDTO {
     
     public Boolean getAktivan() { return aktivan; }
     public void setAktivan(Boolean aktivan) { this.aktivan = aktivan; }
+    
+    // Helper metode
+    public boolean imaUlogu(UlogaNaProjektu uloga) {
+        return this.uloge != null && this.uloge.contains(uloga);
+    }
+    
+    public String getUlogeString() {
+        return uloge != null ? uloge.stream()
+            .map(UlogaNaProjektu::name)
+            .collect(Collectors.joining(", ")) : "";
+    }
 }

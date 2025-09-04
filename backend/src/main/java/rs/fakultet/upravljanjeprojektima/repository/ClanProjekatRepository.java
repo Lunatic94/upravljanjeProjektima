@@ -24,8 +24,12 @@ public interface ClanProjekatRepository extends JpaRepository<ClanProjekta, Long
     List<ClanProjekta> findByKorisnikAndAktivan(Korisnik korisnik, Boolean aktivan);
     
     Optional<ClanProjekta> findByProjekatAndKorisnikAndAktivan(Projekat projekat, Korisnik korisnik, Boolean aktivan);
+
+    Optional<ClanProjekta> findByProjekatAndKorisnik(Projekat projekat, Korisnik korisnik);
+
     
-    @Query("SELECT cp FROM ClanProjekta cp WHERE cp.projekat = :projekat AND cp.uloga = :uloga AND cp.aktivan = true")
+    // Nova query za pronalaženje članova sa specifičnom ulogom
+    @Query("SELECT cp FROM ClanProjekta cp JOIN cp.uloge u WHERE cp.projekat = :projekat AND u = :uloga AND cp.aktivan = true")
     List<ClanProjekta> findClanovePoUlozi(@Param("projekat") Projekat projekat, @Param("uloga") UlogaNaProjektu uloga);
     
     @Query("SELECT COUNT(cp) FROM ClanProjekta cp WHERE cp.projekat = :projekat AND cp.aktivan = true")
