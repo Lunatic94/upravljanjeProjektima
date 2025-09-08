@@ -120,7 +120,7 @@ INSERT INTO aktivnost_projekta (projekat_id, korisnik_id, tip_aktivnosti, tip_en
 (4, 2, 'AZURIRAN', 'PROJEKAT', 4, 'Status projekta promenjen na ZAVRŠEN', CURRENT_TIMESTAMP - INTERVAL '25' DAY);
 
 -- Test podaci za email verifikaciju
-INSERT INTO email_verification (token, email, datum_kreiranja, datum_isteka, iskoriscen) VALUES
+INSERT INTO email_verifikacija (token, email, datum_kreiranja, datum_isteka, iskoriscen) VALUES
 ('test-verification-token-123', 'test@example.com', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '24' HOUR, false),
 ('expired-token-456', 'expired@example.com', CURRENT_TIMESTAMP - INTERVAL '2' DAY, CURRENT_TIMESTAMP - INTERVAL '1' DAY, false),
 ('used-token-789', 'used@example.com', CURRENT_TIMESTAMP - INTERVAL '1' DAY, CURRENT_TIMESTAMP + INTERVAL '23' HOUR, true);

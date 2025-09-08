@@ -11,8 +11,8 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "email_verification")
-public class EmailVerification {
+@Table(name = "email_verifikacija")
+public class EmailVerifikacija {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,9 +40,9 @@ public class EmailVerification {
     }
     
     // Konstruktori, getteri i setteri
-    public EmailVerification() {}
+    public EmailVerifikacija() {}
     
-    public EmailVerification(String token, String email) {
+    public EmailVerifikacija(String token, String email) {
         this.token = token;
         this.email = email;
     }

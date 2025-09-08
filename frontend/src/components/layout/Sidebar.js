@@ -10,7 +10,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
     { id: 'projekti', label: 'Projekti', icon: '📁', path: '/projekti' },
     { id: 'zadaci', label: 'Zadaci', icon: '📋', path: '/zadaci' },
     { id: 'korisnici', label: 'Korisnici', icon: '👥', path: '/korisnici' },
-    { id: 'profil', label: 'Profil', icon: '👤', path: '/profil' }
+    { id: 'profil', label: 'Profil', icon: '👤', path: '/profile' }
   ];
 
   return (

@@ -9,16 +9,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import rs.fakultet.upravljanjeprojektima.model.entity.EmailVerification;
+import rs.fakultet.upravljanjeprojektima.model.entity.EmailVerifikacija;
 
 @Repository
-public interface EmailVerificationRepository extends JpaRepository<EmailVerification, Long> {
+public interface EmailVerifikacijaRepository extends JpaRepository<EmailVerifikacija, Long> {
     
-    Optional<EmailVerification> findByToken(String token);
+    Optional<EmailVerifikacija> findByToken(String token);
     
-    Optional<EmailVerification> findByEmailAndIskoriscen(String email, Boolean iskoriscen);
+    Optional<EmailVerifikacija> findByEmailAndIskoriscen(String email, Boolean iskoriscen);
     
     @Modifying
-    @Query("DELETE FROM EmailVerification e WHERE e.datumIsteka < :datum")
+    @Query("DELETE FROM EmailVerifikacija e WHERE e.datumIsteka < :datum")
     void obrisiIstekleTokene(@Param("datum") LocalDateTime datum);
 }

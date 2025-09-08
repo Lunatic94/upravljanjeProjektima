@@ -75,7 +75,7 @@ const NotFound = () => {
           <Link to="/korisnici" style={{ color: '#1976d2', textDecoration: 'none' }}>
             👥 Korisnici
           </Link>
-          <Link to="/profil" style={{ color: '#1976d2', textDecoration: 'none' }}>
+          <Link to="/profile" style={{ color: '#1976d2', textDecoration: 'none' }}>
             👤 Moj profil
           </Link>
         </div>

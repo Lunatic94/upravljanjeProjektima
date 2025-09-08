@@ -8,10 +8,10 @@ import jakarta.transaction.Transactional;
 import rs.fakultet.upravljanjeprojektima.exception.ResourceNotFoundException;
 import rs.fakultet.upravljanjeprojektima.model.dto.KorisnikDTO;
 import rs.fakultet.upravljanjeprojektima.model.dto.RegistracijaRequest;
-import rs.fakultet.upravljanjeprojektima.model.entity.EmailVerification;
+import rs.fakultet.upravljanjeprojektima.model.entity.EmailVerifikacija;
 import rs.fakultet.upravljanjeprojektima.model.entity.Korisnik;
 import rs.fakultet.upravljanjeprojektima.model.enums.UlogaKorisnika;
-import rs.fakultet.upravljanjeprojektima.repository.EmailVerificationRepository;
+import rs.fakultet.upravljanjeprojektima.repository.EmailVerifikacijaRepository;
 import rs.fakultet.upravljanjeprojektima.repository.KorisnikRepository;
 
 import java.time.LocalDateTime;
@@ -32,7 +32,7 @@ public class KorisnikService {
     private EmailService emailService;
 
     @Autowired
-    private EmailVerificationRepository emailVerificationRepository;
+    private EmailVerifikacijaRepository emailVerifikacijaRepository;
     
     public List<KorisnikDTO> sviKorisnici() {
         return korisnikRepository.findAll().stream()
@@ -82,8 +82,8 @@ public class KorisnikService {
 
         // Generisanje i slanje verifikacionog emaila
         String token = UUID.randomUUID().toString();
-        EmailVerification emailVerification = new EmailVerification(token, request.getEmail());
-        emailVerificationRepository.save(emailVerification);
+        EmailVerifikacija emailVerifikacija = new EmailVerifikacija(token, request.getEmail());
+        emailVerifikacijaRepository.save(emailVerifikacija);
     
         emailService.posaljiVerifikacioniEmail(request.getEmail(), token);
         return konvertujUDTOPrivate(sacuvaniKorisnik);
@@ -137,13 +137,13 @@ public class KorisnikService {
     
     @Transactional
     public boolean verifikujEmail(String token) {
-        Optional<EmailVerification> verificationOpt = emailVerificationRepository.findByToken(token);
+        Optional<EmailVerifikacija> verificationOpt = emailVerifikacijaRepository.findByToken(token);
         
         if (verificationOpt.isEmpty()) {
             return false;
         }
         
-        EmailVerification verification = verificationOpt.get();
+        EmailVerifikacija verification = verificationOpt.get();
         
         if (!verification.isTokenValid()) {
             return false;
@@ -163,7 +163,7 @@ public class KorisnikService {
         
         // Označi token kao iskorišćen
         verification.setIskoriscen(true);
-        emailVerificationRepository.save(verification);
+        emailVerifikacijaRepository.save(verification);
         
         return true;
     }
@@ -181,8 +181,8 @@ public class KorisnikService {
         
         // Generiši novi token
         String token = UUID.randomUUID().toString();
-        EmailVerification emailVerification = new EmailVerification(token, email);
-        emailVerificationRepository.save(emailVerification);
+        EmailVerifikacija emailVerifikacija = new EmailVerifikacija(token, email);
+        emailVerifikacijaRepository.save(emailVerifikacija);
         
         emailService.posaljiVerifikacioniEmail(email, token);
     }

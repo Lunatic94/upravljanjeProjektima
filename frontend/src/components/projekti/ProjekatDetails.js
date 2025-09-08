@@ -3,8 +3,10 @@ import { useAuth } from '../../context/AuthContext';
 import { zadatakService } from '../../services/zadatakService';
 import { projekatService } from '../../services/projekatService';
 import { api } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
+  const { showToast } = useToast();
   const { token, user } = useAuth();
   const [zadaci, setZadaci] = useState([]);
   const [clanovi, setClanovi] = useState([]);
@@ -19,6 +21,7 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
   const [selectedUloga, setSelectedUloga] = useState('PROGRAMER');
   const [addingMember, setAddingMember] = useState(false);
   const [availableRoles] = useState(['PROGRAMER', 'TESTER', 'DIZAJNER', 'MENADZER_PROJEKTA']);
+
 
   useEffect(() => {
     const loadData = async () => {
@@ -180,7 +183,7 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
   // Handler funkcije
   const handleAddMember = async () => {
     if (!selectedKorisnik) {
-      alert('Molimo izaberite korisnika');
+      showToast('Molimo izaberite korisnika', 'warning');
       return;
     }
 
@@ -195,10 +198,13 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
       setSelectedKorisnik('');
       setSelectedUloga('PROGRAMER');
       setShowAddMemberModal(false);
+
+      showToast('Član je uspešno dodat na projekat!', 'success');
       
     } catch (error) {
       console.error('Error adding member:', error);
-      alert('Greška pri dodavanju člana: ' + (error.message || 'Nepoznata greška'));
+      //alert('Greška pri dodavanju člana: ' + (error.message || 'Nepoznata greška'));
+      //showToast('Greška pri dodavanju člana: ' + (error.message || 'Nepoznata greška'), 'error');
     } finally {
       setAddingMember(false);
     }
@@ -212,9 +218,11 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
     try {
       await projekatService.ukloniClana(token, projekat.id, clanId);
       setClanovi(clanovi.filter(c => c.id !== clanId));
+     // showToast(`Uloga ${getRoleText(ulogaZaUklanjanje)} je uklonjena`, 'success');
     } catch (error) {
       console.error('Error removing member:', error);
-      alert('Greška pri uklanjanju člana: ' + (error.message || 'Nepoznata greška'));
+     // alert('Greška pri uklanjanju člana: ' + (error.message || 'Nepoznata greška'));
+      showToast(`Greška pri uklanjanju uloge: ${error.message}`, 'error');
     }
   };
 
@@ -248,7 +256,8 @@ const handleAddRoleToMember = async (clan, novaUloga) => {
       }
     } catch (error) {
       console.error('Error adding role:', error);
-      alert('Greška pri dodavanju uloge: ' + error.message);
+      //alert('Greška pri dodavanju uloge: ' + error.message);
+      showToast('Greška pri dodavanju uloge: ${error.message}', 'error');
     }
   };
 
@@ -272,13 +281,16 @@ const handleRemoveRoleFromMember = async (clan, ulogaZaUklanjanje) => {
         // Refresh svih članova da dobijemo najnovije podatke
         const updatedClanovi = await projekatService.getClanoveProjekta(token, projekat.id);
         setClanovi(updatedClanovi);
+        showToast(`Uloga ${getRoleText(ulogaZaUklanjanje)} je uklonjena`, 'success');
       } else {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Greška pri uklanjanju uloge');
       }
     } catch (error) {
       console.error('Error removing role:', error);
-      alert('Greška pri uklanjanju uloge: ' + error.message);
+      //alert('Greška pri uklanjanju uloge: ' + error.message);
+      showToast('Greška pri uklanjanju uloge: ${error.message}', 'error');
+      
     }
   };
 
@@ -308,7 +320,8 @@ const handleRemoveRoleFromMember = async (clan, ulogaZaUklanjanje) => {
 
     const handleRemoveRole = async (role) => {
       if (memberRoles.length <= 1) {
-        alert('Korisnik mora imati barem jednu ulogu na projektu!');
+        //alert('Korisnik mora imati barem jednu ulogu na projektu!');
+        showToast('Korisnik mora imati barem jednu ulogu na projektu!', 'warning');
         return;
       }
 

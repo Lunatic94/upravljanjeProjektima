@@ -12,6 +12,7 @@ import Projekti from './pages/Projekti';
 import Zadaci from './pages/Zadaci';
 import Korisnici from './pages/Korisnici';
 import Profile from './pages/Profile';
+import { ToastProvider } from './context/ToastContext';
 
 // Protected Route komponenta
 const ProtectedRoute = ({ children }) => {
@@ -132,10 +133,12 @@ function AppContent() {
 // Glavna export komponenta sa AuthProvider i Router
 export default function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </AuthProvider>
+    </ToastProvider>
   );
 }
