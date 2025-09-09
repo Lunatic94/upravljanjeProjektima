@@ -104,11 +104,12 @@ public class KorisnikService {
     public KorisnikDTO azurirajKorisnika(Long id, KorisnikDTO korisnikDTO) {
         Korisnik korisnik = korisnikRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Korisnik nije pronađen sa id: " + id));
-        
-        //if (korisnikRepository.existsByEmail(korisnik.getEmail())) {
-         //   throw new ResourceNotFoundException("Korisnik sa ovom Email adresom:" + korisnikDTO.getEmail() + " već postoji!");
-       // }
-       //
+       
+        // Proveri da li postoji drugi korisnik sa istom email adresom
+        Optional<Korisnik> postojeciKorisnik = korisnikRepository.findByEmail(korisnikDTO.getEmail());
+        if (postojeciKorisnik.isPresent() && !postojeciKorisnik.get().getId().equals(id)) {
+            throw new RuntimeException("Korisnik sa email adresom " + korisnikDTO.getEmail() + " već postoji!");
+        }
                 
         korisnik.setIme(korisnikDTO.getIme());
         korisnik.setPrezime(korisnikDTO.getPrezime());

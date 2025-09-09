@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { komentarService } from '../../services/komentarService';
 import { useParams } from 'react-router-dom';
+import { useToast } from '../../context/ToastContext';
 
 const ZadatakDetails = ({ zadatak, onClose, onEdit, onStatusChange }) => {
+  const { showToast } = useToast();
   const { user, token } = useAuth();
   const [komentari, setKomentari] = useState([]);
   const [noviKomentar, setNoviKomentar] = useState('');
@@ -74,11 +76,13 @@ const ZadatakDetails = ({ zadatak, onClose, onEdit, onStatusChange }) => {
     
     try {
       const newComment = await komentarService.dodajKomentar(token, zadatak.id, noviKomentar.trim());
+      showToast(`Komentar je uspešno dodat na zadatak`, 'success');
       setKomentari([...komentari, newComment]);
       setNoviKomentar('');
     } catch (error) {
       console.error('Error adding comment:', error);
-      alert('Greška pri dodavanju komentara: ' + (error.message || 'Nepoznata greška'));
+      //alert('Greška pri dodavanju komentara: ' + (error.message || 'Nepoznata greška'));
+      showToast(`Greška prilikom dodavanja komentara`, 'error');
     } finally {
       setSubmittingKomentar(false);
     }
@@ -90,9 +94,11 @@ const ZadatakDetails = ({ zadatak, onClose, onEdit, onStatusChange }) => {
     try {
       await komentarService.obrisiKomentar(token, zadatak.id, komentarId);
       setKomentari(komentari.filter(k => k.id !== komentarId));
+      showToast(`Komentar je uspešno obrisan`, 'success');
     } catch (error) {
       console.error('Error deleting comment:', error);
-      alert('Greška pri brisanju komentara: ' + (error.message || 'Nepoznata greška'));
+      //alert('Greška pri brisanju komentara: ' + (error.message || 'Nepoznata greška'));
+      showToast(`Greška prilikom dodavanja komentara`, 'error');
     }
   };
 

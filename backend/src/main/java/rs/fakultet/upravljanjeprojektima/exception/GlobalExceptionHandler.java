@@ -33,7 +33,7 @@ public class GlobalExceptionHandler {
         Map<String, String> errors = new HashMap<>();
         BindingResult bindingResult = ex.getBindingResult();
         
-        String allErrors = bindingResult.getFieldErrors().stream().map(error -> "Unos" + error.getField() + " -> " + error.getDefaultMessage())
+        String allErrors = bindingResult.getFieldErrors().stream().map(error -> error.getDefaultMessage())
                                         .collect(Collectors.joining("\n"));
         errors.put("error", allErrors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);

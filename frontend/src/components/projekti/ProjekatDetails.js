@@ -199,7 +199,7 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
       setSelectedUloga('PROGRAMER');
       setShowAddMemberModal(false);
 
-      showToast('Član je uspešno dodat na projekat!', 'success');
+      showToast(`Član je uspešno dodat na projekat!`, 'success');
       
     } catch (error) {
       console.error('Error adding member:', error);
@@ -218,7 +218,7 @@ const ProjekatDetails = ({ projekat, onClose, onEdit }) => {
     try {
       await projekatService.ukloniClana(token, projekat.id, clanId);
       setClanovi(clanovi.filter(c => c.id !== clanId));
-     // showToast(`Uloga ${getRoleText(ulogaZaUklanjanje)} je uklonjena`, 'success');
+      showToast(`Uloga je uspešno uklonjena`, 'success');
     } catch (error) {
       console.error('Error removing member:', error);
      // alert('Greška pri uklanjanju člana: ' + (error.message || 'Nepoznata greška'));
@@ -250,6 +250,7 @@ const handleAddRoleToMember = async (clan, novaUloga) => {
       if (response.ok) {
         const updatedClan = await response.json();
         setClanovi(clanovi.map(c => c.id === clan.id ? updatedClan : c));
+        showToast('Uloga je uspešno dodata!', 'success');
       } else {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Greška pri dodavanju uloge');

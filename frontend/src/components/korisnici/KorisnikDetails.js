@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useParams } from 'react-router-dom';
+import { useToast } from '../../context/ToastContext';
 
 const KorisnikDetails = ({ korisnik, onClose, onEdit, onDeactivate }) => {
+  const { showToast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
@@ -42,8 +44,10 @@ const KorisnikDetails = ({ korisnik, onClose, onEdit, onDeactivate }) => {
       setLoading(true);
       try {
         await onDeactivate(korisnik);
+        showToast('Korisnik je uspešno deaktiviran!', 'success');
       } catch (error) {
         console.error('Error changing user status:', error);
+        showToast('Greška pri deaktivaciji', 'error');
       }
       setLoading(false);
     }

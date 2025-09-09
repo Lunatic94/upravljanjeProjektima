@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { korisnikService } from '../services/korisnikService';
+import { useToast } from '../context/ToastContext';
 
 const Profile = () => {
   //const { user, token, setUser } = useAuth(); // Dodajemo setUser da ažuriramo korisnika
+  const { showToast } = useToast();
   const { user, token, updateUser } = useAuth(); //novi
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,10 +48,13 @@ const Profile = () => {
       updateUser(formData);
       
       setIsEditing(false);
-      alert('Profil je uspešno ažuriran!');
+      //alert('Profil je uspešno ažuriran!');
+      showToast('Korisnik je uspešno ažuriran!', 'success');
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Greška pri ažuriranju profila: ' + (error.message || 'Nepoznata greška'));
+      //alert('Greška pri ažuriranju profila: ' + (error.message || 'Nepoznata greška'));
+      //showToast('Greška pri ažuriranju profila:', 'success');
+      showToast(`${error.message}`, 'error');
     }
     
     setLoading(false);

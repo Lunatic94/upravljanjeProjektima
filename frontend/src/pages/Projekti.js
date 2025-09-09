@@ -3,8 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import ProjekatDetails from '../components/projekti/ProjekatDetails';
 import KreirajProjekat from '../components/projekti/KreirajProjekat';
+import { useToast } from '../context/ToastContext';
 
 const Projekti = () => {
+  const { showToast } = useToast();
   const { token, user } = useAuth();
   const [projekti, setProjekti] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +112,8 @@ const Projekti = () => {
         //setProjekti(prev => prev.filter(p => p.id !== projekat.id));
         loadProjekti();
         
-        alert('Projekat je uspešno obrisan!');
+        //alert('Projekat je uspešno obrisan!');
+        showToast(`Projekat je uspešno obrisan`, 'success');
       } catch (error) {
         console.error('Error deleting project:', error);
         alert('Greška pri brisanju projekta: ' + (error.message || 'Nepoznata greška'));
@@ -124,13 +127,12 @@ const Projekti = () => {
       
       // Pozivamo pravi API za kreiranje projekta
       const newProjekat = await api.kreirajProjekat(token, formData);
-      
+      showToast(`Projekat je uspešno kreiran!`, 'success');
       // Dodajemo novi projekat u listu
       //setProjekti(prev => [newProjekat, ...prev]);
       loadProjekti();
-      setShowCreateForm(false);
-      
-      alert('Projekat je uspešno kreiran!');
+      //setShowCreateForm(false);
+      //alert('Projekat je uspešno kreiran!');
     } catch (error) {
       console.error('Error creating project:', error);
       alert('Greška pri kreiranju projekta: ' + (error.message || 'Nepoznata greška'));
@@ -143,13 +145,12 @@ const Projekti = () => {
       
       // Pozivamo pravi API za ažuriranje projekta
       const updatedProjekat = await api.azurirajProjekat(token, editingProjekat.id, formData);
-      
+      showToast(`Projekat je uspešno ažuriran!`, 'success');
       // Ažuriramo projekat u listi
       //setProjekti(prev => prev.map(p => p.id === editingProjekat.id ? updatedProjekat : p));
       loadProjekti();
       setEditingProjekat(null);
-      
-      alert('Projekat je uspešno ažuriran!');
+      //alert('Projekat je uspešno ažuriran!');
     } catch (error) {
       console.error('Error updating project:', error);
       alert('Greška pri ažuriranju projekta: ' + (error.message || 'Nepoznata greška'));

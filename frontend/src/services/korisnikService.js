@@ -1,5 +1,4 @@
 const API_BASE_URL = 'http://localhost:8080/api';
-
 export const korisnikService = {
   // Ažuriranje profila korisnika
   azurirajProfil: async (token, korisnikId, profileData) => {

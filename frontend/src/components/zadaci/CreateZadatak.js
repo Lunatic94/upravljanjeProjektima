@@ -1,13 +1,18 @@
+// frontend/src/components/zadaci/CreateZadatak.js
+// Primer kako ažurirati CreateZadatak komponentu da koristi validaciju
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
-import { useParams } from 'react-router-dom';
+import { useFormValidation, zadatakValidationRules } from '../../hooks/useFormValidation';
+import { formatDateForInput } from '../../utils/dateValidation';
 
 const CreateZadatak = ({ onSubmit, onCancel, loading = false, defaultProjekatId = null, initialData = null, isEditing = false }) => {
   const { token } = useAuth();
   const [projekti, setProjekti] = useState([]);
   const [korisnici, setKorisnici] = useState([]);
-  const [formData, setFormData] = useState({
+
+  const initialValues = {
     naslov: '',
     opis: '',
     prioritet: 'SREDNJI',
@@ -16,7 +21,20 @@ const CreateZadatak = ({ onSubmit, onCancel, loading = false, defaultProjekatId 
     rokZavrsetka: '',
     projekatId: defaultProjekatId || '',
     dodeljKorisnikId: ''
-  });
+  };
+
+  const {
+    values,
+    errors,
+    touched,
+    setValue,
+    setFieldTouched,
+    setAllTouched,
+    validateForm,
+    setFormValues,
+    hasErrors,
+    isFieldInvalid
+  } = useFormValidation(initialValues, zadatakValidationRules);
 
   useEffect(() => {
     const loadData = async () => {
@@ -46,14 +64,7 @@ const CreateZadatak = ({ onSubmit, onCancel, loading = false, defaultProjekatId 
   // Popuni formu sa podacima za edit
   useEffect(() => {
     if (initialData && isEditing) {
-      // Formatiramo datum za input type="date"
-      const formatDateForInput = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toISOString().split('T')[0];
-      };
-
-      setFormData({
+      setFormValues({
         naslov: initialData.naslov || '',
         opis: initialData.opis || '',
         prioritet: initialData.prioritet || 'SREDNJI',
@@ -63,39 +74,61 @@ const CreateZadatak = ({ onSubmit, onCancel, loading = false, defaultProjekatId 
         projekatId: initialData.projekatId || initialData.projekat?.id || '',
         dodeljKorisnikId: initialData.dodeljKorisnikId || initialData.dodeljen?.id || ''
       });
-    } else if (!isEditing) {
-      // Resetuj formu za kreiranje novog zadatka
-      setFormData({
-        naslov: '',
-        opis: '',
-        prioritet: 'SREDNJI',
-        status: 'TREBA_URADITI',
-        procenjeniSati: '',
-        rokZavrsetka: '',
-        projekatId: defaultProjekatId || '',
-        dodeljKorisnikId: ''
-      });
     }
-  }, [initialData, isEditing, defaultProjekatId]);
+  }, [initialData, isEditing, setFormValues]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const submitData = {
-      ...formData,
-      procenjeniSati: formData.procenjeniSati ? parseInt(formData.procenjeniSati) : null,
-      //dodeljKorisnikId: formData.dodeljKorisnikId || null
-      dodeljen: formData.dodeljKorisnikId ? 
-        korisnici.find(k => k.id === parseInt(formData.dodeljKorisnikId)) : null
-    };
-    onSubmit?.(submitData);
+    setAllTouched();
+    
+    if (validateForm()) {
+      const submitData = {
+        ...values,
+        procenjeniSati: values.procenjeniSati ? parseInt(values.procenjeniSati, 10) : null
+      };
+      onSubmit?.(submitData);
+    }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setValue(name, value);
+  };
+
+  const handleBlur = (e) => {
+    const { name } = e.target;
+    setFieldTouched(name);
+  };
+
+  const canSubmit = !loading && values.naslov.trim() && values.projekatId && !hasErrors;
+
+  // Helper funkcija za stil input polja
+  const getInputStyle = (fieldName) => ({
+    width: '100%',
+    padding: '12px',
+    border: `2px solid ${isFieldInvalid(fieldName) ? '#f44336' : '#e0e0e0'}`,
+    borderRadius: '6px',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'border-color 0.3s'
+  });
+
+  // Helper funkcija za prikaz greške
+  const renderFieldError = (fieldName) => {
+    if (!isFieldInvalid(fieldName)) return null;
+    
+    return (
+      <div style={{ 
+        color: '#f44336', 
+        fontSize: '12px', 
+        marginTop: '4px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px'
+      }}>
+        ⚠️ {errors[fieldName]}
+      </div>
+    );
   };
 
   return (
@@ -122,112 +155,115 @@ const CreateZadatak = ({ onSubmit, onCancel, loading = false, defaultProjekatId 
         boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
       }}>
         <h2 style={{ marginBottom: '25px', color: '#1976d2', textAlign: 'center' }}>
-          📋 {isEditing ? 'Ažuriranje Zadatka' : 'Kreiranje Novog Zadatka'}
+          {isEditing ? '✏️ Ažuriraj Zadatak' : '➕ Kreiraj Novi Zadatak'}
         </h2>
-        
+
         <form onSubmit={handleSubmit}>
+          {/* Naslov zadatka */}
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              fontWeight: 'bold', 
+              color: '#333' 
+            }}>
               Naslov zadatka *
             </label>
             <input
               type="text"
               name="naslov"
-              value={formData.naslov}
+              value={values.naslov}
               onChange={handleChange}
-              required
-              placeholder="Unesite naslov zadatka"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e0e0e0',
-                borderRadius: '6px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'border-color 0.3s'
+              onBlur={handleBlur}
+              placeholder="Unesite naslov zadatka..."
+              style={getInputStyle('naslov')}
+              onFocus={(e) => {
+                if (!isFieldInvalid('naslov')) {
+                  e.target.style.borderColor = '#1976d2';
+                }
               }}
-              onFocus={(e) => e.target.style.borderColor = '#1976d2'}
-              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
             />
+            {renderFieldError('naslov')}
           </div>
 
+          {/* Opis */}
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              fontWeight: 'bold', 
+              color: '#333' 
+            }}>
               Opis zadatka
             </label>
             <textarea
               name="opis"
-              value={formData.opis}
+              value={values.opis}
               onChange={handleChange}
-              rows="3"
               placeholder="Opišite zadatak..."
+              rows="3"
               style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e0e0e0',
-                borderRadius: '6px',
-                fontSize: '14px',
+                ...getInputStyle('opis'),
                 resize: 'vertical',
-                outline: 'none',
-                transition: 'border-color 0.3s'
+                minHeight: '80px'
               }}
               onFocus={(e) => e.target.style.borderColor = '#1976d2'}
               onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
-                Projekat *
-              </label>
-              <select
-                name="projekatId"
-                value={formData.projekatId}
-                onChange={handleChange}
-                required
-                disabled={isEditing} // Onemogući menjanje projekta pri editovanju
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #e0e0e0',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  outline: 'none',
-                  backgroundColor: isEditing ? '#f5f5f5' : 'white',
-                  cursor: isEditing ? 'not-allowed' : 'pointer'
-                }}
-              >
-                <option value="">Izaberite projekat</option>
-                {projekti.map((projekat) => (
-                  <option key={projekat.id} value={projekat.id}>
-                    {projekat.naziv}
-                  </option>
-                ))}
-              </select>
-              {isEditing && (
-                <small style={{ color: '#666', fontSize: '12px' }}>
-                  Projekat se ne može menjati pri ažuriranju zadatka
-                </small>
-              )}
-            </div>
+          {/* Projekat */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              fontWeight: 'bold', 
+              color: '#333' 
+            }}>
+              Projekat *
+            </label>
+            <select
+              name="projekatId"
+              value={values.projekatId}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              disabled={!!defaultProjekatId}
+              style={{
+                ...getInputStyle('projekatId'),
+                opacity: defaultProjekatId ? 0.6 : 1
+              }}
+            >
+              <option value="">Izaberite projekat</option>
+              {projekti.map((projekat) => (
+                <option key={projekat.id} value={projekat.id}>
+                  {projekat.naziv}
+                </option>
+              ))}
+            </select>
+            {renderFieldError('projekatId')}
+          </div>
 
+          {/* Prioritet i Procenjeni sati */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: '1fr 1fr', 
+            gap: '15px', 
+            marginBottom: '20px' 
+          }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '8px', 
+                fontWeight: 'bold', 
+                color: '#333' 
+              }}>
                 Prioritet
               </label>
               <select
                 name="prioritet"
-                value={formData.prioritet}
+                value={values.prioritet}
                 onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #e0e0e0',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  outline: 'none'
-                }}
+                style={getInputStyle('prioritet')}
               >
                 <option value="NIZAK">🟢 Nizak</option>
                 <option value="SREDNJI">🟡 Srednji</option>
@@ -235,94 +271,71 @@ const CreateZadatak = ({ onSubmit, onCancel, loading = false, defaultProjekatId 
                 <option value="KRITICAN">🔴 Kritičan</option>
               </select>
             </div>
-          </div>
 
-          {isEditing && (
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
-                Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #e0e0e0',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  outline: 'none'
-                }}
-              >
-                <option value="TREBA_URADITI">📝 Treba uraditi</option>
-                <option value="U_TOKU">⚡ U toku</option>
-                <option value="NA_PREGLEDU">👀 Na pregledu</option>
-                <option value="ZAVRSENO">✅ Završeno</option>
-              </select>
-            </div>
-          )}
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '8px', 
+                fontWeight: 'bold', 
+                color: '#333' 
+              }}>
                 Procenjeni sati
               </label>
               <input
                 type="number"
                 name="procenjeniSati"
-                value={formData.procenjeniSati}
+                value={values.procenjeniSati}
                 onChange={handleChange}
-                min="1"
-                placeholder="npr. 8"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #e0e0e0',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  outline: 'none'
-                }}
+                onBlur={handleBlur}
+                placeholder="8"
+                min="0"
+                style={getInputStyle('procenjeniSati')}
               />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
-                Rok završetka
-              </label>
-              <input
-                type="date"
-                name="rokZavrsetka"
-                value={formData.rokZavrsetka}
-                onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #e0e0e0',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  outline: 'none'
-                }}
-              />
+              {renderFieldError('procenjeniSati')}
             </div>
           </div>
 
+          {/* Rok završetka */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              fontWeight: 'bold', 
+              color: '#333' 
+            }}>
+              Rok završetka
+            </label>
+            <input
+              type="date"
+              name="rokZavrsetka"
+              value={values.rokZavrsetka}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              style={getInputStyle('rokZavrsetka')}
+              onFocus={(e) => {
+                if (!isFieldInvalid('rokZavrsetka')) {
+                  e.target.style.borderColor = '#1976d2';
+                }
+              }}
+            />
+            {renderFieldError('rokZavrsetka')}
+          </div>
+
+          {/* Dodeli korisniku */}
           <div style={{ marginBottom: '25px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              fontWeight: 'bold', 
+              color: '#333' 
+            }}>
               Dodeli korisniku
             </label>
             <select
               name="dodeljKorisnikId"
-              value={formData.dodeljKorisnikId}
+              value={values.dodeljKorisnikId}
               onChange={handleChange}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e0e0e0',
-                borderRadius: '6px',
-                fontSize: '14px',
-                outline: 'none'
-              }}
+              style={getInputStyle('dodeljKorisnikId')}
             >
               <option value="">Nije dodeljen</option>
               {korisnici.map((korisnik) => (
@@ -333,7 +346,34 @@ const CreateZadatak = ({ onSubmit, onCancel, loading = false, defaultProjekatId 
             </select>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          {/* Validacione greške - summary */}
+          {hasErrors && Object.keys(touched).length > 0 && (
+            <div style={{
+              background: '#ffebee',
+              border: '1px solid #f44336',
+              borderRadius: '6px',
+              padding: '12px',
+              marginBottom: '20px',
+              fontSize: '13px',
+              color: '#c62828'
+            }}>
+              <strong>⚠️ Molimo ispravite sledeće greške:</strong>
+              <ul style={{ margin: '5px 0 0 20px', padding: 0 }}>
+                {Object.keys(errors).map(key => 
+                  errors[key] && touched[key] && (
+                    <li key={key}>{errors[key]}</li>
+                  )
+                )}
+              </ul>
+            </div>
+          )}
+
+          {/* Dugmad */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '12px', 
+            justifyContent: 'flex-end' 
+          }}>
             <button
               type="button"
               onClick={onCancel}
@@ -353,21 +393,22 @@ const CreateZadatak = ({ onSubmit, onCancel, loading = false, defaultProjekatId 
             </button>
             <button
               type="submit"
-              disabled={loading || !formData.naslov.trim() || !formData.projekatId}
+              disabled={!canSubmit}
               style={{
-                background: loading || !formData.naslov.trim() || !formData.projekatId ? '#ccc' : '#1976d2',
+                background: canSubmit ? '#1976d2' : '#ccc',
                 color: 'white',
                 border: 'none',
                 padding: '12px 24px',
                 borderRadius: '6px',
-                cursor: loading || !formData.naslov.trim() || !formData.projekatId ? 'not-allowed' : 'pointer',
+                cursor: canSubmit ? 'pointer' : 'not-allowed',
                 fontSize: '14px',
-                fontWeight: '500'
+                fontWeight: '500',
+                opacity: canSubmit ? 1 : 0.6
               }}
             >
               {loading 
                 ? (isEditing ? 'Ažuriranje...' : 'Kreiranje...') 
-                : (isEditing ? '💾 Ažuriraj Zadatak' : '📋 Kreiraj Zadatak')
+                : (isEditing ? '💾 Ažuriraj Zadatak' : '➕ Kreiraj Zadatak')
               }
             </button>
           </div>

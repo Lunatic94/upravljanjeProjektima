@@ -4,8 +4,10 @@ import { zadatakService } from '../services/zadatakService';
 import { api } from '../services/api';
 import ZadatakDetails from '../components/zadaci/ZadatakDetails';
 import CreateZadatak from '../components/zadaci/CreateZadatak';
+import { useToast } from '../context/ToastContext';
 
 const Zadaci = () => {
+  const { showToast } = useToast();
   const { token, user } = useAuth();
   const [zadaci, setZadaci] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -106,7 +108,8 @@ const Zadaci = () => {
       try {
         await zadatakService.obrisiZadatak(token, zadatak.id);
         setZadaci(prev => prev.filter(z => z.id !== zadatak.id));
-        alert('Zadatak je uspešno obrisan!');
+        //alert('Zadatak je uspešno obrisan!');
+        showToast(`Zadatak je uspešno obrisan!`, 'success');
       } catch (error) {
         console.error('Error deleting task:', error);
         alert('Greška pri brisanju zadatka: ' + (error.message || 'Nepoznata greška'));
@@ -119,8 +122,9 @@ const Zadaci = () => {
       console.log('Creating task:', formData);
       const newZadatak = await zadatakService.kreirajZadatak(token, formData);
       setZadaci(prev => [newZadatak, ...prev]);
-      setShowCreateForm(false);
-      alert('Zadatak je uspešno kreiran!');
+      //setShowCreateForm(false);
+      showToast(`Zadatak je uspešno kreiran!`, 'success');
+      //alert('Zadatak je uspešno kreiran!');
     } catch (error) {
       console.error('Error creating task:', error);
       alert('Greška pri kreiranju zadatka: ' + (error.message || 'Nepoznata greška'));

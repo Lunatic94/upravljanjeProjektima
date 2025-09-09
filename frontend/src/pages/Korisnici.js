@@ -4,8 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import CreateKorisnik from '../components/korisnici/CreateKorisnik';
 import KorisnikDetails from '../components/korisnici/KorisnikDetails';
+import { useToast } from '../context/ToastContext';
 
 const Korisnici = () => {
+  const { showToast } = useToast();
   const { token, user } = useAuth();
   const [korisnici, setKorisnici] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,10 +111,12 @@ const Korisnici = () => {
       await loadKorisnici();
       setShowEditForm(false);
       setSelectedKorisnik(null);
-      alert('Korisnik je uspešno ažuriran!');
+      //alert('Korisnik je uspešno ažuriran!');
+      showToast('Korisnik je uspešno ažuriran!', 'success');
     } catch (error) {
       console.error('Error updating user:', error);
-      alert('Greška pri ažuriranju korisnika: ' + error.message);
+      //alert('Greška : ' + error.message);
+      showToast(`${error.message}`, 'error');
     }
     setFormLoading(false);
   };
@@ -139,7 +143,8 @@ const Korisnici = () => {
       }
 
       await loadKorisnici();
-      alert(`Korisnik je uspešno ${korisnik.aktivan ? 'deaktiviran' : 'aktiviran'}!`);
+      showToast(`Korisnik je uspešno ${korisnik.aktivan ? 'deaktiviran' : 'aktiviran'}!`, 'success');
+      //alert(`Korisnik je uspešno ${korisnik.aktivan ? 'deaktiviran' : 'aktiviran'}!`);
     } catch (error) {
       console.error('Error changing user status:', error);
       alert('Greška pri promeni statusa korisnika: ' + error.message);
